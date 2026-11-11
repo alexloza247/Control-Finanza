@@ -64,6 +64,15 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     static final String ACTION_TAB = "com.alejandro.controlfinanzas.widget.ACTION_TAB";
     static final String EXTRA_TAB = "tab";
 
+    // Toque en un elemento de la lista: el fill-in solo aporta el enlace
+    // (extra), la plantilla es un broadcast a este provider. Al recibirlo,
+    // el provider guarda el enlace como accion pendiente en CapacitorStorage
+    // (la app lo lee al arrancar aunque el deep link no le llegue) y luego
+    // abre MainActivity con ese deep link.
+    static final String ACTION_WIDGET_LINK = "com.alejandro.controlfinanzas.widget.ACTION_LINK";
+    static final String EXTRA_LINK_URL = "linkUrl";
+    static final String KEY_PENDING_ACTION = "finanzas_widget_pending_action";
+
     static final int TAB_SALDO = 0;
     static final int TAB_BILLS = 1;
     static final int TAB_INCOME = 2;
@@ -110,6 +119,30 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (ACTION_WIDGET_LINK.equals(intent.getAction())) {
+            String url = intent.getStringExtra(EXTRA_LINK_URL);
+            if (url != null && !url.isEmpty()) {
+                // 1) Accion pendiente: queda guardada aunque el deep link
+                // no llegue a la app; index.html la lee al arrancar y la
+                // borra al atenderla.
+                context.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                        .edit().putString(KEY_PENDING_ACTION, url).apply();
+                // 2) Abrir la app con el deep link, como antes (via
+                // PendingIntent, que es la via que ya abre la app).
+                Intent open = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                open.setComponent(new ComponentName(context.getPackageName(),
+                        context.getPackageName() + ".MainActivity"));
+                open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                try {
+                    PendingIntent.getActivity(context, 900, open,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE).send();
+                } catch (Exception e) {
+                    // La app no se abrio; la accion pendiente queda guardada
+                    // para cuando se abra.
+                }
+            }
+            return;
+        }
         if (ACTION_TAB.equals(intent.getAction())) {
             int tab = intent.getIntExtra(EXTRA_TAB, TAB_SALDO);
             context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
@@ -158,21 +191,19 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         svc.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
         svc.setData(Uri.parse(svc.toUri(Intent.URI_INTENT_SCHEME)));
         views.setRemoteAdapter(R.id.widget_content, svc);
-        // Plantilla de toque para los elementos de la lista: cada uno pone
-        // su enlace con fill-in intent y se abre la app con ese deep link.
-        // La plantilla es EXPLICITA a MainActivity (ComponentName con el
-        // paquete de la app): con la plantilla implicita de antes (solo
-        // ACTION_VIEW, sin componente) el sistema resolvia el enlace por
-        // intent-filter y en el telefono no encontraba la app, asi que
-        // buscaba otra app para abrirlo. Al fijar el componente, el toque
-        // siempre abre esta app; el fill-in solo aporta la URI
-        // controlfinanzas://widget/... con el formulario a abrir. El
+        // Plantilla de toque para los elementos de la lista: es un broadcast
+        // a este provider (no un intent directo a la actividad). Cada fila
+        // pone su enlace con fill-in intent (solo un extra con la URL, sin
+        // accion ni datos, para que el fill-in no pise la accion de la
+        // plantilla). Al recibirlo, onReceive guarda el enlace como accion
+        // pendiente y abre MainActivity con el deep link: asi el toque no
+        // depende solo de que Capacitor entregue la URL del intent (en el
+        // telefono la app se abria pero el formulario no aparecia). El
         // intent-filter del enlace sigue en el manifiesto (lo agrega
         // install-widget.py) por si algo dispara la URI desde fuera.
-        Intent tpl = new Intent(Intent.ACTION_VIEW);
-        tpl.setComponent(new ComponentName(pkg, pkg + ".MainActivity"));
-        tpl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent tplPi = PendingIntent.getActivity(context, 900, tpl,
+        Intent tpl = new Intent(context, FinanzasWidgetProvider.class);
+        tpl.setAction(ACTION_WIDGET_LINK);
+        PendingIntent tplPi = PendingIntent.getBroadcast(context, 950, tpl,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         views.setPendingIntentTemplate(R.id.widget_content, tplPi);
         return views;

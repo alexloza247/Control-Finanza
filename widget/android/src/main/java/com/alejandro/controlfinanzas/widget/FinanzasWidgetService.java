@@ -269,9 +269,14 @@ public class FinanzasWidgetService extends RemoteViewsService {
             return row;
         }
 
-        /** Enlace que se combina con la plantilla del provider al picar. */
+        /** Enlace que se combina con la plantilla del provider al picar.
+         *  Va SOLO como extra (sin accion ni datos): el fill-in nunca pisa
+         *  la accion de la plantilla (ACTION_WIDGET_LINK) y el provider
+         *  lee la URL de este extra. */
         private Intent fillIntent(String url) {
-            return new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            Intent i = new Intent();
+            i.putExtra(FinanzasWidgetProvider.EXTRA_LINK_URL, url);
+            return i;
         }
     }
 }
