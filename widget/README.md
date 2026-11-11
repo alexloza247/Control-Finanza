@@ -17,11 +17,13 @@ movimiento" (abre el form nuevo del tipo de la pestaña) y para crear un atajo
 nuevo ("＋ Nuevo" en la pestaña, o el aviso cuando aún no hay atajos).
 
 **Tamaños (ajuste 2026-11-11):** pestañas de 52dp e iconos grandes, saldo a
-34sp, líneas de pagos a 16sp en filas de 46dp de alto, botón de registro de 46dp (en línea con los
-demás elementos) y atajos a 14sp con máximo 2 chips por fila (el tercero pasa
-a una segunda fila), para que el texto se lea completo sin cortarse. El
-detalle del saldo va en dos líneas (Deuda en una, Mes en otra) para que nada
-se trunque.
+34sp, líneas de pagos a 16sp en filas de al menos 64dp de alto (nombre y monto
+en la primera línea, vencimiento en una segunda línea a 13sp), botón de
+registro de 46dp (en línea con los demás elementos) y atajos a 14sp con
+máximo 2 chips por fila (el tercero pasa a una segunda fila), con el monto
+en su propia segunda línea y más espacio entre líneas para que el texto no se
+empalme. El detalle del saldo va en dos líneas (Deuda en una, Mes en otra)
+para que nada se trunque.
 
 **Desplazamiento (2026-11-11):** el contenido se desliza arriba/abajo: la
 fila de pestañas queda fija arriba y debajo va una lista (ListView) con el
@@ -33,12 +35,17 @@ widget se alcanza deslizando.
 
 **Toque (2026-11-11):** el toque en un elemento de la lista es un broadcast
 al provider (`ACTION_WIDGET_LINK`): el fill-in solo aporta el enlace como
-extra, sin acción ni datos, para no pisar la acción de la plantilla. Al
-recibirlo, el provider guarda el enlace como acción pendiente en
-`CapacitorStorage` (`finanzas_widget_pending_action`) y abre MainActivity
-con el deep link. La app lo atiende por tres vías: acción pendiente (la lee
-al arrancar y al volver al frente, y la borra al atenderla), URL de
-lanzamiento (`getLaunchUrl`, con reintentos si viene vacía) y evento
+extra, sin acción ni datos, para no pisar la acción de la plantilla. La
+plantilla es un PendingIntent **mutable**: con `FLAG_IMMUTABLE` Android
+ignora el fill-in intent, el broadcast llegaba sin enlace y el botón no
+hacía nada (ni siquiera abría la app); fue el fallo del build 2fd551f4. Si
+alguna vez llega sin enlace, el provider abre la app en inicio en vez de
+quedarse en silencio. Al recibirlo, el provider guarda el enlace como acción
+pendiente en `CapacitorStorage` (`finanzas_widget_pending_action`) y abre
+MainActivity con el deep link. La app lo atiende por tres vías: acción
+pendiente (la lee al arrancar y al volver al frente, y la borra al
+atenderla), URL de lanzamiento (`getLaunchUrl`, con reintentos si viene
+vacía) y evento
 `appUrlOpen`; un mismo enlace no se atiende dos veces seguidas. Así el
 formulario se abre aunque Capacitor no entregue la URL del intent (antes
 la app se abría pero no pasaba nada).
