@@ -160,7 +160,17 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         views.setRemoteAdapter(R.id.widget_content, svc);
         // Plantilla de toque para los elementos de la lista: cada uno pone
         // su enlace con fill-in intent y se abre la app con ese deep link.
+        // La plantilla es EXPLICITA a MainActivity (ComponentName con el
+        // paquete de la app): con la plantilla implicita de antes (solo
+        // ACTION_VIEW, sin componente) el sistema resolvia el enlace por
+        // intent-filter y en el telefono no encontraba la app, asi que
+        // buscaba otra app para abrirlo. Al fijar el componente, el toque
+        // siempre abre esta app; el fill-in solo aporta la URI
+        // controlfinanzas://widget/... con el formulario a abrir. El
+        // intent-filter del enlace sigue en el manifiesto (lo agrega
+        // install-widget.py) por si algo dispara la URI desde fuera.
         Intent tpl = new Intent(Intent.ACTION_VIEW);
+        tpl.setComponent(new ComponentName(pkg, pkg + ".MainActivity"));
         tpl.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent tplPi = PendingIntent.getActivity(context, 900, tpl,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
