@@ -12,6 +12,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
 
@@ -169,15 +170,18 @@ public class FinanzasWidgetService extends RemoteViewsService {
                 JSONObject b = bills.optJSONObject(i);
                 if (b == null) continue;
                 RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_bill);
-                String label = b.optString("name", "") + " · "
-                        + FinanzasWidgetProvider.daysLabel(b.optInt("days", 0));
-                row.setTextViewText(R.id.row_bill_name, label);
+                row.setTextViewText(R.id.row_bill_name, b.optString("name", ""));
                 row.setTextViewText(R.id.row_bill_amt,
                         FinanzasWidgetProvider.fmtMoney(b.optDouble("amt", 0)));
+                // "vence hoy" / "vencido hace..." en su propia segunda
+                // linea, para que el nombre y el monto no se corten.
+                row.setTextViewText(R.id.row_bill_due,
+                        FinanzasWidgetProvider.daysLabel(b.optInt("days", 0)));
                 if (themed) {
                     FinanzasWidgetProvider.tintBackground(row, R.id.row_bill_root, theme.surface);
                     row.setTextColor(R.id.row_bill_name, theme.ink);
                     row.setTextColor(R.id.row_bill_amt, theme.ink);
+                    row.setTextColor(R.id.row_bill_due, theme.muted);
                 }
                 row.setOnClickFillInIntent(R.id.row_bill_root,
                         fillIntent(FinanzasWidgetProvider.DEEP_LINK + "paybill?id="
@@ -235,9 +239,13 @@ public class FinanzasWidgetService extends RemoteViewsService {
                         continue;
                     }
                     JSONObject p = mine.get(i);
+                    // Nombre en la primera linea y monto en la segunda
+                    // (salto explicito, no un corte al azar): con el
+                    // lineSpacingExtra del chip las dos lineas ya no se
+                    // ven empalmadas.
                     String txt = sign + " " + p.optString("name", "");
                     if (p.optDouble("amt", 0) > 0) {
-                        txt += " · " + FinanzasWidgetProvider.fmtMoney(p.optDouble("amt", 0));
+                        txt += "\n" + FinanzasWidgetProvider.fmtMoney(p.optDouble("amt", 0));
                     }
                     chips.setTextViewText(chipIds[i], txt);
                     chips.setViewVisibility(chipIds[i], View.VISIBLE);

@@ -1,31 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Pago proximo: dos lineas. Primera: nombre (con ... si no cabe) y monto
+     en negrita a la derecha. Segunda: cuando vence ("vence hoy",
+     "vencido hace 1 día", ...) en texto mas chico y apagado, para que el
+     nombre y el monto nunca se corten por culpa de la leyenda. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/row_bill_root"
     android:layout_width="match_parent"
-    android:layout_height="46dp"
+    android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
     android:background="@drawable/widget_chip_bg"
+    android:minHeight="64dp"
     android:gravity="center_vertical"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:paddingStart="10dp"
-    android:paddingEnd="10dp">
+    android:paddingEnd="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/row_bill_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#14211F"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/row_bill_amt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:maxLines="1"
+            android:textColor="#14211F"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/row_bill_name"
-        android:layout_width="0dp"
+        android:id="@+id/row_bill_due"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_marginTop="2dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textColor="#14211F"
-        android:textSize="16sp" />
-
-    <TextView
-        android:id="@+id/row_bill_amt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:maxLines="1"
-        android:textColor="#14211F"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="#5E6E6B"
+        android:textSize="13sp" />
 </LinearLayout>

@@ -64,11 +64,12 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     static final String ACTION_TAB = "com.alejandro.controlfinanzas.widget.ACTION_TAB";
     static final String EXTRA_TAB = "tab";
 
-    // Toque en un elemento de la lista: el fill-in solo aporta el enlace
-    // (extra), la plantilla es un broadcast a este provider. Al recibirlo,
-    // el provider guarda el enlace como accion pendiente en CapacitorStorage
-    // (la app lo lee al arrancar aunque el deep link no le llegue) y luego
-    // abre MainActivity con ese deep link.
+    // Toque en un elemento de la lista: el fill-in aporta el enlace solo
+    // como extra (sin accion ni datos, para no pisar la accion de la
+    // plantilla), la plantilla es un broadcast a este provider. Al
+    // recibirlo, el provider guarda el enlace como accion pendiente en
+    // CapacitorStorage (la app lo lee al arrancar aunque el deep link no le
+    // llegue) y luego abre MainActivity con ese deep link.
     static final String ACTION_WIDGET_LINK = "com.alejandro.controlfinanzas.widget.ACTION_LINK";
     static final String EXTRA_LINK_URL = "linkUrl";
     static final String KEY_PENDING_ACTION = "finanzas_widget_pending_action";
@@ -121,24 +122,32 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     public void onReceive(Context context, Intent intent) {
         if (ACTION_WIDGET_LINK.equals(intent.getAction())) {
             String url = intent.getStringExtra(EXTRA_LINK_URL);
-            if (url != null && !url.isEmpty()) {
-                // 1) Accion pendiente: queda guardada aunque el deep link
-                // no llegue a la app; index.html la lee al arrancar y la
-                // borra al atenderla.
-                context.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
-                        .edit().putString(KEY_PENDING_ACTION, url).apply();
-                // 2) Abrir la app con el deep link, como antes (via
-                // PendingIntent, que es la via que ya abre la app).
-                Intent open = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                open.setComponent(new ComponentName(context.getPackageName(),
-                        context.getPackageName() + ".MainActivity"));
-                open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            if (url == null || url.isEmpty()) {
+                // Sin enlace el toque no debe quedarse en nada: abrir la
+                // app en inicio (antes aqui se salia en silencio y el
+                // usuario veia que el boton "no hacia nada").
+                url = DEEP_LINK + "home";
+            }
+            // 1) Accion pendiente: queda guardada aunque el deep link
+            // no llegue a la app; index.html la lee al arrancar y la
+            // borra al atenderla.
+            context.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                    .edit().putString(KEY_PENDING_ACTION, url).apply();
+            // 2) Abrir la app con el deep link, como antes (via
+            // PendingIntent, que es la via que ya abre la app).
+            Intent open = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            open.setComponent(new ComponentName(context.getPackageName(),
+                    context.getPackageName() + ".MainActivity"));
+            open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            try {
+                PendingIntent.getActivity(context, 900, open,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE).send();
+            } catch (Exception e) {
+                // Si el PendingIntent falla, abrir directo: el toque
+                // nunca debe quedarse sin respuesta.
                 try {
-                    PendingIntent.getActivity(context, 900, open,
-                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE).send();
-                } catch (Exception e) {
-                    // La app no se abrio; la accion pendiente queda guardada
-                    // para cuando se abra.
+                    context.startActivity(open);
+                } catch (Exception ignored) {
                 }
             }
             return;
@@ -201,10 +210,21 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         // telefono la app se abria pero el formulario no aparecia). El
         // intent-filter del enlace sigue en el manifiesto (lo agrega
         // install-widget.py) por si algo dispara la URI desde fuera.
+        //
+        // OJO: la plantilla DEBE ser MUTABLE. Con FLAG_IMMUTABLE Android
+        // ignora el fill-in intent (ver PendingIntent.FLAG_IMMUTABLE:
+        // "the additional intent argument passed to the send methods to
+        // fill in unpopulated properties of this intent will be ignored"),
+        // asi que el broadcast llegaba sin EXTRA_LINK_URL, onReceive salia
+        // en silencio y el toque no abria ni siquiera la app. Ese fue el
+        // fallo del build 2fd551f4. Las pestanas (tabIntent) no usan
+        // fill-in, por eso si cambiaban aunque los botones no hicieran
+        // nada. El intent es explicito a este provider, asi que mutable
+        // no abre la puerta a intents implicitos ajenos.
         Intent tpl = new Intent(context, FinanzasWidgetProvider.class);
         tpl.setAction(ACTION_WIDGET_LINK);
         PendingIntent tplPi = PendingIntent.getBroadcast(context, 950, tpl,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
         views.setPendingIntentTemplate(R.id.widget_content, tplPi);
         return views;
     }
