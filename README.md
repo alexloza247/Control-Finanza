@@ -26,7 +26,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Buscador por nota, categoría o cuenta, y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
 - Al guardar un movimiento aparece el aviso "Guardado".
 - Al crear una compra a MSI en tarjeta de crédito, el formulario muestra la mensualidad en vivo antes de guardar ("Mensualidad: $1,000.00 al mes · 12 pagos").
-- Lista de movimientos agrupada por mes, con ingresos y gastos del mes.
+- Lista de movimientos agrupada por mes, con ingresos y gastos del mes; dentro de cada mes, un pequeño separador por día ("11 de Noviembre 2026") antes de los movimientos de ese día.
 - Atajos: botones para tus gastos o ingresos de siempre (por ejemplo, "Pasaje camión"), con monto, cuenta y categoría predefinidos; también se pueden editar y eliminar.
 
 ### Tarjetas de crédito y meses sin intereses (MSI)
