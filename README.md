@@ -9,7 +9,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 ### Cuentas
 
 - Cuentas de efectivo, débito y crédito.
-- Nombre, saldo o deuda actual, y para crédito: límite, día de corte, día de pago y frecuencia de pago mensual o quincenal (cada fecha se repite 15 días después). La ayuda debajo de la frecuencia cambia según la opción elegida (Mensual o Quincenal).
+- Nombre, saldo o deuda actual, y para crédito: límite (obligatorio al crear o editar la tarjeta, para que "Confirma tus saldos" pueda pedir el crédito disponible), día de corte, día de pago y frecuencia de pago mensual o quincenal (cada fecha se repite 15 días después). La ayuda debajo de la frecuencia cambia según la opción elegida (Mensual o Quincenal).
 - Al guardar una cuenta aparece el aviso "Guardado".
 - Barra de uso del límite de crédito y crédito disponible.
 - Crear, editar y eliminar cuentas (eliminar una cuenta también elimina sus movimientos).
@@ -84,7 +84,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 ### Recordatorio diario de saldos
 
 - En la pestaña **Configuración** eliges a qué hora quieres el recordatorio (por defecto, 23:00) y si está activado.
-- Cada día, a esa hora, la app te pide confirmar el saldo de cada cuenta: efectivo, débito y deuda de tarjetas, con los montos que marca la app ya escritos.
+- Cada día, a esa hora, la app te pide confirmar el saldo de cada cuenta: efectivo y débito por su saldo actual, y las tarjetas de crédito por su **crédito disponible** (deuda = límite − disponible), con los montos que marca la app ya escritos. Si una tarjeta no tiene límite guardado, o su deuda supera el límite, se pide su deuda actual (el disponible no puede representar una deuda mayor al límite). Un disponible mayor que el límite se toma como deuda $0.
 - Si corriges un saldo, se crea un movimiento de **Ajuste de saldo** (ingreso, gasto o pago de tarjeta, según el caso) para que la app quede acorde a lo que realmente tienes.
 - El recordatorio aparece una sola vez al día. En **Configuración** hay un botón **Probar recordatorio** para verlo en ese momento.
 - También muestra la fecha de tu última confirmación de saldos.
