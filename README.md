@@ -19,7 +19,8 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 - Registrar ingresos, gastos y transferencias entre cuentas.
 - Categorías: Comida, Transporte, Casa, Servicios, Educación, Salud, Ocio, Compras, Sueldo y Otros, más categorías propias que puedes crear y eliminar.
-- Nota, fecha y monto con formato de moneda.
+- Nota, fecha y hora (formato 24 h) y monto con formato de moneda. Al crear un movimiento la hora se prellena con la hora actual y se puede cambiar; al editarlo se muestra su hora guardada. La hora se muestra en la lista junto a la fecha ("· 15:30"); los movimientos viejos sin hora se muestran igual que antes.
+- Los movimientos se ordenan por fecha descendente y, dentro del mismo día, por hora descendente (el más reciente arriba); los movimientos sin hora van después de los que tienen hora ese día.
 - Editar y eliminar movimientos.
 - Cada movimiento muestra un ícono de lápiz (✎) para que se vea que se puede editar.
 - Buscador por nota, categoría o cuenta, y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
