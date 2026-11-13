@@ -13,7 +13,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Al guardar una cuenta aparece el aviso "Guardado".
 - Barra de uso del límite de crédito y crédito disponible.
 - Crear, editar y eliminar cuentas (eliminar una cuenta también elimina sus movimientos).
-- Resumen de dinero disponible y deuda total en tarjetas.
+- Resumen de dinero disponible y deuda total en tarjetas. Los ingresos y gastos del mes del Resumen (y del widget) se calculan con la hora local del dispositivo, así que el último día del mes no se mezclan dos meses.
 
 ### Movimientos
 
@@ -37,7 +37,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Cada compra MSI muestra su mensualidad y cuántos pagos lleva y le faltan.
 - Pagar tarjeta: registra el pago desde efectivo o débito, o sin descontar de otra cuenta; el monto no puede ser mayor a la deuda. El formulario muestra la deuda total y, si hay MSI activos, la mensualidad de este mes, con un botón "Pagar solo la mensualidad" para no pagar la deuda completa por accidente.
 - Al guardar un pago aparece el aviso "Pago registrado".
-- Los pagos se descuentan de los planes MSI, del más viejo al más nuevo; un plan pagado por completo deja de aparecer como activo.
+- Los pagos se descuentan primero de los planes MSI, del plan más viejo al más nuevo, y solo lo que sobra va a la demás deuda (compras sin MSI y saldos viejos); así cada pago mensual avanza el contador del plan (1/12, 2/12…). Antes el pago iba a la compra más vieja sin importar si era MSI, y el plan se quedaba en 0/N. Un plan pagado por completo deja de aparecer como activo.
 
 ### Gráficas
 
@@ -61,7 +61,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Crear pagos pendientes con nombre, monto opcional, fecha y cuenta.
 - El botón **+** (abajo a la derecha) te deja elegir entre "Nuevo movimiento" y "Nuevo pago próximo"; también se puede crear un pago próximo desde **Calendario**, con el botón "+ Pago próximo" (usa el día seleccionado, o el de hoy).
 - El botón para pagar un pago próximo dice "Revisar y pagar", porque primero se revisa el movimiento y luego se confirma con Guardar.
-- Se repiten una vez, cada semana, cada quincena, cada mes o con una frecuencia personalizada (cada N días, por ejemplo cada 10 días); al pagarlos se registra el movimiento y la fecha avanza según la frecuencia elegida. La quincena avanza 15 días, igual que en las tarjetas de crédito.
+- Se repiten una vez, cada semana, cada quincena, cada mes o con una frecuencia personalizada (cada N días, por ejemplo cada 10 días); al pagarlos se registra el movimiento y la fecha avanza según la frecuencia elegida, las veces que haga falta hasta quedar en el futuro: un pago muy vencido no vuelve a quedar vencido. La quincena avanza 15 días, igual que en las tarjetas de crédito.
 - El botón de calendario (icono) en cada pago próximo crea el evento en Google Calendar con la repetición correspondiente (semanal, cada 15 días, mensual o cada N días).
 - En el Resumen se muestran ordenados por fecha, con avisos cuando faltan 3 días o menos.
 
@@ -96,10 +96,10 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 - En la pestaña **Configuración**, sección **Notificaciones**, hay un bloque **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
 - Un día antes de cada fecha de pago, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
-- Solo se avisa de fechas que aún no llegan (vence mañana o después). Si un pago vence hoy o ya venció, no hay "día antes" que avisar para esa fecha; si la hora del aviso de hoy ya pasó, ese pago no se programa (la lista de pagos lo sigue mostrando como "vence mañana").
+- Solo se avisa de fechas que aún no llegan (vence mañana o después). Si un pago vence hoy o ya venció, no hay "día antes" que avisar para esa fecha; si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un minuto, para que llegue hoy mismo y no se pierda en silencio.
 - Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso se programa una sola vez (no se repite) y los avisos viejos se cancelan antes de reprogramar, para no duplicar.
 - Al tocar la notificación de un pago, la app se abre directamente en su formulario para pagarlo (el pago próximo o la tarjeta); si el pago ya no existe, se abre el Resumen. El recordatorio diario de saldos sigue abriendo **Confirma tus saldos** como antes.
-- **En el navegador (sin notificaciones locales):** si un pago vence hoy o mañana y el recordatorio está activado, el Resumen muestra un aviso discreto con el pago y su fecha, sin bloquear nada.
+- **Aviso dentro de la app:** si un pago vence hoy o mañana y el recordatorio está activado, el Resumen muestra un aviso discreto con el pago y su fecha, sin bloquear nada, tanto en el navegador como en la app (APK): es el respaldo visible del aviso "un día antes" cuando la notificación no llegó o su hora ya pasó.
 
 ### Notificaciones
 
@@ -121,7 +121,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Respaldo y datos
 
-- En la pestaña **Configuración**, sección **Respaldo**: **Ver, copiar o descargar respaldo** abre el texto completo del respaldo, que se puede copiar; **en la app** el botón **Compartir respaldo** lo manda al menú de compartir de Android (Drive, Archivos, Keep, etc.) porque el WebView no descarga archivos, y **en el navegador** el botón **Descargar archivo** lo descarga como `respaldo-finanzas.json`; y **Restaurar respaldo** te deja pegar un respaldo para recuperar tus datos; reemplaza los datos actuales. Si el respaldo pegado no es válido, la app avisa y no cambia nada.
+- En la pestaña **Configuración**, sección **Respaldo**: **Ver, copiar o descargar respaldo** abre el texto completo del respaldo, que se puede copiar; **en la app** el botón **Compartir respaldo** lo manda al menú de compartir de Android (Drive, Archivos, Keep, etc.) porque el WebView no descarga archivos, y **en el navegador** el botón **Descargar archivo** lo descarga como `respaldo-finanzas.json`; y **Restaurar respaldo** te deja pegar un respaldo para recuperar tus datos; reemplaza los datos actuales. Antes de reemplazar nada, la app valida la estructura del respaldo (cuentas y movimientos deben ser listas, y pagos próximos, atajos, categorías y ajustes con su tipo correcto); si el respaldo pegado no es válido, la app avisa y no cambia nada.
 - Los datos se guardan solo en este dispositivo, en el almacenamiento local del navegador (`localStorage`, clave `misfinanzas_v1`), y no se sincronizan con otros dispositivos ni con servidores.
 
 ## Cómo usarla

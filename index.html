@@ -115,7 +115,7 @@ function save(){var t=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))
    codigo nativo y se actualiza al tocar una pestana y cada 30 min. Sin
    Capacitor (navegador) no hace nada. */
 var WKEY='finanzas_widget_snapshot';
-function widgetSnapshot(){var avail=0,debt=0;S.accounts.forEach(function(a){var b=balance(a);if(a.type==='credit')debt+=Math.max(0,-b);else avail+=b});var m=new Date().toISOString().slice(0,7),inc=0,exp=0;S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});var st=settingsDef(),ct=st.customTheme,mode=st.mode||'auto',dark=mode==='dark'||(mode==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);return {updated:Date.now(),theme:{primary:ct.primary,secondary:ct.secondary,background:ct.background,nav:ct.nav,mode:mode,dark:!!dark},avail:+avail.toFixed(2),debt:+debt.toFixed(2),monthInc:+inc.toFixed(2),monthExp:+exp.toFixed(2),presets:PR().map(function(p){return {id:p.id,type:p.type,name:p.name,amt:+p.amt||0}}),bills:BL().slice().sort(function(a,b){return a.next<b.next?-1:1}).slice(0,5).map(function(b){return {id:b.id,name:b.name,amt:+b.amt||0,next:b.next,days:daysTo(b.next),freq:billFreqLabel(b)}})}}
+function widgetSnapshot(){var avail=0,debt=0;S.accounts.forEach(function(a){var b=balance(a);if(a.type==='credit')debt+=Math.max(0,-b);else avail+=b});var m=monthKeyOf(new Date()),inc=0,exp=0;S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});var st=settingsDef(),ct=st.customTheme,mode=st.mode||'auto',dark=mode==='dark'||(mode==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);return {updated:Date.now(),theme:{primary:ct.primary,secondary:ct.secondary,background:ct.background,nav:ct.nav,mode:mode,dark:!!dark},avail:+avail.toFixed(2),debt:+debt.toFixed(2),monthInc:+inc.toFixed(2),monthExp:+exp.toFixed(2),presets:PR().map(function(p){return {id:p.id,type:p.type,name:p.name,amt:+p.amt||0}}),bills:BL().slice().sort(function(a,b){return a.next<b.next?-1:1}).slice(0,5).map(function(b){return {id:b.id,name:b.name,amt:+b.amt||0,next:b.next,days:daysTo(b.next),freq:billFreqLabel(b)}})}}
 function syncWidgetSnapshot(){try{var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.Preferences)return;var r=C.Plugins.Preferences.set({key:WKEY,value:JSON.stringify(widgetSnapshot())});if(r&&r.catch)r.catch(function(){})}catch(e){}}
 function initCloud(){if(!window.claude||!claude.use)return;Promise.all([claude.use('db'),claude.use('user')]).then(function(r){var db=r[0],us=r[1];if(!db||!us)return null;return us.id().then(function(uid){if(!uid)return null;ref=db.doc('data/users/'+uid+'/finanzas');return ref.get()})}).then(function(snap){if(!ref)return;var has=S.accounts.length||S.tx.length;if(snap&&snap.exists){var d=snap.data();var newer=d&&d.json&&((+d.updated||0)>lts()||!has);if(newer){var o=JSON.parse(d.json);if(o.accounts&&o.tx){S=o;try{localStorage.setItem(KEY,d.json);localStorage.setItem(TSK,String(+d.updated||Date.now()))}catch(e){}render();setCloud('ok');return}}}if(has)push();else setCloud('ok')}).catch(function(){setCloud('err')})}
 var $=function(i){return document.getElementById(i)};
@@ -162,7 +162,7 @@ function render(){
 function home(){
  if(!S.accounts.length)return '<h1>Mis finanzas</h1><div class="empty"><p>Empieza agregando tu efectivo o una tarjeta.</p><button class="btn" data-act="newacc">Agregar cuenta</button></div>';
  var avail=0,debt=0;S.accounts.forEach(function(a){var b=balance(a);if(a.type==='credit')debt+=Math.max(0,-b)-Math.min(0,-b)*0;else avail+=b});
- var m=new Date().toISOString().slice(0,7),inc=0,exp=0;
+ var m=monthKeyOf(new Date()),inc=0,exp=0;
  S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});
  var h='<h1>Dinero disponible</h1><div class="total"><div class="n">'+money(avail)+'</div><div class="s">Deuda en tarjetas: '+money(debt)+'</div><div class="row" style="margin-top:14px"><div><div class="s">Ingresos del mes</div><b>'+money(inc)+'</b></div><div style="text-align:right"><div class="s">Gastos del mes</div><b>'+money(exp)+'</b></div></div></div>';
  h+=presetsHtml();h+=billDueSoonBanner();h+=billsHtml();h+=chartsHtml();
@@ -170,7 +170,13 @@ function home(){
  if(al.length){h+='<h2>Pagos de tarjeta</h2>';al.forEach(function(o){h+='<div class="item alert '+(o.d.days<=3?'urg':'')+'"><div class="row"><div><div class="t">'+esc(o.a.name)+'</div><div class="m">'+dueLabel(o.d.days)+' · día '+dueDays(o.a).join(' y ')+(o.a.freq==='biweekly'?' (quincenal)':'')+(msiMonth(o.a)>0?' · MSI del mes: '+money(msiMonth(o.a)):'')+'</div></div><div style="text-align:right"><b class="neg">'+money(-balance(o.a))+'</b><br><button type="button" class="mini" data-act="pay" data-id="'+o.a.id+'">Pagar tarjeta</button></div></div></div>'})}
  h+='<h2>Últimos movimientos</h2>'+(S.tx.length?list(S.tx.slice().sort(cmp).slice(0,5)):'<div class="empty">Aún no hay movimientos.</div>');
  return h}
-function msiPlans(a){var pool=0;S.tx.forEach(function(t){if(t.amt&&((t.type==='income'&&t.acc===a.id)||(t.type==='transfer'&&t.to===a.id)))pool+=t.amt});pool-=Math.max(0,-(+a.initial||0));if(pool<0)pool=0;var out=[];S.tx.filter(function(t){return t.type==='expense'&&t.acc===a.id}).sort(function(x,y){return x.date<y.date?-1:x.date>y.date?1:(x.id<y.id?-1:1)}).forEach(function(t){var al=Math.min(t.amt,pool);pool-=al;var rem=t.amt-al;if(t.msi>1&&rem>0.01){var m=t.amt/t.msi,left=Math.max(1,Math.min(t.msi,Math.ceil(rem/m-1e-6)));out.push({t:t,m:Math.min(m,rem),done:t.msi-left,left:left})}});return out}
+/* Planes MSI de una tarjeta: el dinero pagado (pool) se reparte cubriendo
+   primero los planes MSI (plan más viejo primero) y solo lo que sobra va a
+   la demás deuda, de la compra más vieja a la más nueva. Antes todo el pool
+   iba a la compra más vieja (con o sin MSI), así que pagar la mensualidad no
+   avanzaba el plan mientras hubiera deuda vieja sin MSI (el plan se quedaba
+   en 0/N): cada pago mensual debe avanzar el contador un pago. */
+function msiPlans(a){var pool=0;S.tx.forEach(function(t){if(t.amt&&((t.type==='income'&&t.acc===a.id)||(t.type==='transfer'&&t.to===a.id)))pool+=t.amt});pool-=Math.max(0,-(+a.initial||0));if(pool<0)pool=0;var exps=S.tx.filter(function(t){return t.type==='expense'&&t.acc===a.id}).sort(function(x,y){return x.date<y.date?-1:x.date>y.date?1:(x.id<y.id?-1:1)}),alloc={};exps.forEach(function(t){if(t.msi>1){var al=Math.min(t.amt,pool);alloc[t.id]=al;pool-=al}});exps.forEach(function(t){var rem=t.amt-(alloc[t.id]||0),al=Math.min(rem,pool);alloc[t.id]=(alloc[t.id]||0)+al;pool-=al});var out=[];exps.forEach(function(t){var rem=t.amt-(alloc[t.id]||0);if(t.msi>1&&rem>0.01){var m=t.amt/t.msi,left=Math.max(1,Math.min(t.msi,Math.ceil(rem/m-1e-6)));out.push({t:t,m:Math.min(m,rem),done:t.msi-left,left:left})}});return out}
 function msiMonth(a){return msiPlans(a).reduce(function(s,p){return s+p.m},0)}
 
 // ---- Gráficas (Resumen) ----
@@ -202,7 +208,11 @@ function billStepDays(b){return b.freq==='weekly'?7:b.freq==='biweekly'?15:b.fre
 function billFreqLabel(b){return b.freq==='weekly'?' · cada semana':b.freq==='biweekly'?' · cada quincena':b.freq==='monthly'?' · cada mes':b.freq==='custom'?' · cada '+Math.max(1,+b.every||1)+(Math.max(1,+b.every||1)===1?' día':' días'):''}
 function billRRule(b){if(b.freq==='monthly'){var dy=+b.day||+b.next.slice(8,10);return 'FREQ=MONTHLY;BYMONTHDAY='+(dy>28?-1:dy)}if(b.freq==='weekly')return 'FREQ=WEEKLY';if(b.freq==='biweekly')return 'FREQ=DAILY;INTERVAL=15';if(b.freq==='custom')return 'FREQ=DAILY;INTERVAL='+Math.max(1,+b.every||1);return null}
 function billDatesInMonth(b,y,mo){var dim=new Date(y,mo+1,0).getDate(),first=new Date(y,mo,1),last=new Date(y,mo+1,0),dt=new Date(b.next+'T00:00:00'),out=[];if(b.freq==='monthly'){if(dt<=last){var d=Math.min(+b.day||dt.getDate(),dim);if(new Date(y,mo,d)>=first)out.push(d)}return out}var st=billStepDays(b);if(!st){if(dt.getFullYear()===y&&dt.getMonth()===mo)out.push(dt.getDate());return out}while(dt<first)dt=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+st);while(dt<=last){out.push(dt.getDate());dt=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()+st)}return out}
-function advanceBill(id){var b=BL().filter(function(x){return x.id===id})[0];if(!b)return;if(b.freq==='monthly'){var d=new Date(b.next+'T00:00:00'),day=+b.day||d.getDate(),l=new Date(d.getFullYear(),d.getMonth()+2,0).getDate();b.next=fmt(new Date(d.getFullYear(),d.getMonth()+1,Math.min(day,l)))}else if(billStepDays(b)){var d2=new Date(b.next+'T00:00:00'),st=billStepDays(b);b.next=fmt(new Date(d2.getFullYear(),d2.getMonth(),d2.getDate()+st))}else S.bills=BL().filter(function(x){return x.id!==id})}
+/* Al pagar (u omitir) un pago próximo recurrente, su fecha avanza por su
+   frecuencia las veces que haga falta hasta quedar en el futuro (después de
+   hoy). Antes avanzaba una sola vez, así que un pago muy vencido quedaba
+   vencido otra vez. */
+function advanceBill(id){var b=BL().filter(function(x){return x.id===id})[0];if(!b)return;var t=today();if(b.freq==='monthly'){var d=new Date(b.next+'T00:00:00'),day=+b.day||d.getDate();do{var l=new Date(d.getFullYear(),d.getMonth()+2,0).getDate();d=new Date(d.getFullYear(),d.getMonth()+1,Math.min(day,l))}while(fmt(d)<=t);b.next=fmt(d)}else if(billStepDays(b)){var d2=new Date(b.next+'T00:00:00'),st=billStepDays(b);do{d2=new Date(d2.getFullYear(),d2.getMonth(),d2.getDate()+st)}while(fmt(d2)<=t);b.next=fmt(d2)}else S.bills=BL().filter(function(x){return x.id!==id})}
 function billsHtml(){var L=BL().slice().sort(function(a,b){return a.next<b.next?-1:1}),h='<div class="row"><h2>Pagos próximos</h2><a class="lnk" data-act="newbill">+ Nuevo</a></div>';
  if(!L.length)return h+'<div class="m">Agrega tus pagos pendientes para saber cuándo toca pagar.</div>';
  return h+L.map(function(b){var n=daysTo(b.next);return '<div class="item alert'+(n<=3?' urg':'')+'" data-act="editbill" data-id="'+b.id+'"><div class="row"><div><div class="t">'+esc(b.name)+'</div><div class="m">'+billLabel(n)+' · '+b.next+billFreqLabel(b)+'</div></div><div style="text-align:right"><b>'+(b.amt?money(b.amt):'')+'</b><br><button type="button" class="mini" data-act="paybill" data-id="'+b.id+'">Revisar y pagar</button><br>'+calLink('Pagar '+b.name,b.next,+b.day||+b.next.slice(8,10),billRRule(b),(b.amt?'Monto: '+money(b.amt):''))+'</div></div></div>'}).join('')}
@@ -383,7 +393,13 @@ function backupForm(){open('<h2 style="margin-top:0">Respaldo</h2><div class="m"
   if(ok){say('Respaldo copiado');return}
   if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){say('Respaldo copiado')},function(){say('Mantén presionado el texto para copiarlo')})}else say('Mantén presionado el texto para copiarlo')}
  $('dl').onclick=function(){shareBackup($('bk').value)}};
-function restoreFromText(v){try{var o=JSON.parse(v);if(!(o.accounts&&o.tx))throw 0;S=o;save();render();say('Datos restaurados');return true}catch(x){say('El respaldo no es válido');return false}}
+/* Un respaldo debe tener la estructura de la app: accounts y tx son listas
+   obligatorias; pagos próximos, atajos, categorías y ajustes, si vienen, con
+   su tipo correcto. Sin validar, un respaldo roto (p. ej. accounts como objeto)
+   se aceptaba y rompía Cuentas y Calendario. */
+function isObj(o){return o&&typeof o==='object'&&!Array.isArray(o)}
+function validBackup(o){if(!isObj(o))return false;if(!Array.isArray(o.accounts)||!Array.isArray(o.tx))return false;if(o.bills!==undefined&&!Array.isArray(o.bills))return false;if(o.presets!==undefined&&!Array.isArray(o.presets))return false;if(o.cats!==undefined&&!Array.isArray(o.cats))return false;if(o.settings!==undefined&&!isObj(o.settings))return false;var ok=true;o.accounts.forEach(function(a){if(!isObj(a)||typeof a.id!=='string'||['cash','debit','credit'].indexOf(a.type)<0)ok=false});o.tx.forEach(function(t){if(!isObj(t)||['income','expense','transfer'].indexOf(t.type)<0||typeof t.amt!=='number'||!isFinite(t.amt))ok=false});if(o.bills)o.bills.forEach(function(b){if(!isObj(b)||typeof b.id!=='string'||typeof b.next!=='string')ok=false});if(o.presets)o.presets.forEach(function(p){if(!isObj(p)||typeof p.id!=='string')ok=false});if(o.cats)o.cats.forEach(function(c){if(typeof c!=='string')ok=false});return ok}
+function restoreFromText(v){try{var o=JSON.parse(v);if(!validBackup(o))throw 0;S=o;save();render();say('Datos restaurados');return true}catch(x){say('El respaldo no es válido');return false}}
 function restoreForm(){open('<h2 style="margin-top:0">Restaurar respaldo</h2><div class="m">Pega aquí tu respaldo. Reemplazará los datos actuales.</div><textarea id="rs" rows="6" style="'+TA+'"></textarea><button class="btn" id="ok" style="margin-top:10px">Restaurar</button><button class="btn ghost" id="cn">Cancelar</button>');
  $('cn').onclick=close;
  $('ok').onclick=function(){if(restoreFromText($('rs').value))close()}}
@@ -432,20 +448,23 @@ function cancelBillReminders(){try{var C=window.Capacitor;if(!C||!C.Plugins||!C.
 /* Programa una notificación local UNA VEZ por cada pago próximo, el día anterior
    a su fecha de pago y a la hora elegida (por defecto 09:00). Antes de programar
    cancela las anteriores (ids 100-119) para no duplicar ni dejar avisos viejos.
-   Si la hora del aviso de hoy ya pasó, ese pago no se programa (el aviso de
-   "un día antes" a esa hora ya no puede sonar); la lista de pagos lo sigue
-   mostrando como "vence mañana". Se reprograma al arrancar y en cada save(). */
-function scheduleBillReminders(){registerLocalNotificationTap();try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled){cancelBillReminders();return false}var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.LocalNotifications)return false;var LN=C.Plugins.LocalNotifications;cancelBillReminders();var pp=(st.billReminderTime||'09:00').split(':'),hh=+pp[0],mm=+pp[1],now=Date.now(),list=billReminderTargets().slice(0,BILL_REMINDER_MAX),notes=[];list.forEach(function(t,i){var rem=new Date(t.due+'T00:00:00');rem.setDate(rem.getDate()-1);var at=new Date(rem.getFullYear(),rem.getMonth(),rem.getDate(),hh,mm);if(at.getTime()<=now)return;var body=t.kind==='card'?('Mañana es el pago límite de "'+t.name+'" · deuda '+money(t.amt)):('Mañana vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''));notes.push({id:BILL_REMINDER_FIRST_ID+i,title:t.kind==='card'?'Pago de tarjeta mañana':'Pago mañana',body:body,schedule:{at:at,allowWhileIdle:true},extra:{kind:t.kind,id:t.id}})});if(notes.length)LN.schedule({notifications:notes});return true}catch(e){return false}}
+   Si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un
+   minuto, para que llegue hoy mismo y no se pierda en silencio; la lista de
+   pagos lo sigue mostrando como "vence mañana". Se reprograma al arrancar y
+   en cada save(). */
+function scheduleBillReminders(){registerLocalNotificationTap();try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled){cancelBillReminders();return false}var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.LocalNotifications)return false;var LN=C.Plugins.LocalNotifications;cancelBillReminders();var pp=(st.billReminderTime||'09:00').split(':'),hh=+pp[0],mm=+pp[1],now=Date.now(),list=billReminderTargets().slice(0,BILL_REMINDER_MAX),notes=[];list.forEach(function(t,i){var rem=new Date(t.due+'T00:00:00');rem.setDate(rem.getDate()-1);var at=new Date(rem.getFullYear(),rem.getMonth(),rem.getDate(),hh,mm);if(at.getTime()<=now)at=new Date(now+60000);var body=t.kind==='card'?('Mañana es el pago límite de "'+t.name+'" · deuda '+money(t.amt)):('Mañana vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''));notes.push({id:BILL_REMINDER_FIRST_ID+i,title:t.kind==='card'?'Pago de tarjeta mañana':'Pago mañana',body:body,schedule:{at:at,allowWhileIdle:true},extra:{kind:t.kind,id:t.id}})});if(notes.length)LN.schedule({notifications:notes});return true}catch(e){return false}}
 /* Pagos que vencen hoy o mañana, para el aviso dentro de la app (navegador,
    sin notificaciones locales): se muestra un recordatorio en el Resumen. */
 function billsDueSoon(){var out=[];
  BL().forEach(function(b){var d=daysTo(b.next);if(d===0||d===1)out.push({kind:'bill',id:b.id,name:b.name,amt:+b.amt||0,days:d})});
  S.accounts.forEach(function(a){if(a.type!=='credit'||!a.dueDay)return;if(balance(a)>=0)return;var nd=nextDueCard(a);if(nd&&(nd.days===0||nd.days===1))out.push({kind:'card',id:a.id,name:a.name,amt:Math.max(0,-balance(a)),days:nd.days})});
  return out}
-/* Banner discreto en el Resumen (solo navegador, sin notificaciones locales):
-   recuerda los pagos que vencen hoy o mañana. Respeta el interruptor del
-   recordatorio de pagos: si está desactivado, no se muestra. */
-function billDueSoonBanner(){try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled)return '';var C=window.Capacitor;if(C&&C.Plugins&&C.Plugins.LocalNotifications)return '';var ds=billsDueSoon();if(!ds.length)return '';return '<div class="item alert urg"><div class="t">Recordatorio de pago</div><div class="m">'+ds.map(function(t){var w=t.days===0?'Hoy':'Mañana';return w+(t.kind==='card'?' es el pago límite de "'+t.name+'" · deuda '+money(t.amt):' vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''))}).join('<br>')+'</div></div>'}catch(e){return ''}}
+/* Banner discreto en el Resumen: recuerda los pagos que vencen hoy o mañana.
+   Se muestra también en la app (APK), no solo en el navegador: es el respaldo
+   visible del aviso "un día antes" cuando la notificación no llegó o su hora
+   ya pasó. Respeta el interruptor del recordatorio de pagos: si está
+   desactivado, no se muestra. */
+function billDueSoonBanner(){try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled)return '';var ds=billsDueSoon();if(!ds.length)return '';return '<div class="item alert urg"><div class="t">Recordatorio de pago</div><div class="m">'+ds.map(function(t){var w=t.days===0?'Hoy':'Mañana';return w+(t.kind==='card'?' es el pago límite de "'+t.name+'" · deuda '+money(t.amt):' vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''))}).join('<br>')+'</div></div>'}catch(e){return ''}}
 /* Botón de regreso de Android (APK, @capacitor/app v7): al registrar este listener
    Capacitor desactiva el comportamiento por defecto del botón, así que el handler
    decide: con un modal abierto lo cierra (close() ya consume la entrada de historial
