@@ -169,7 +169,7 @@ function home(){
  var m=monthKeyOf(new Date()),inc=0,exp=0;
  S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});
  var free=freeMoney(),h='<h1>Dinero disponible</h1><div class="total"><div class="n">'+money(avail)+'</div><div class="s">Deuda en tarjetas: '+money(debt)+'</div><div class="row" style="margin-top:14px"><div><div class="s">Ingresos del mes</div><b>'+money(inc)+'</b></div><div style="text-align:right"><div class="s">Gastos del mes</div><b>'+money(exp)+'</b></div></div><div class="s" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">Puedes gastar: <b>'+money(free)+'</b></div></div>';
- h+=presetsHtml();h+=billDueSoonBanner();h+=billsHtml();h+=chartsHtml();
+ h+=presetsHtml();h+=billsHtml();h+=chartsHtml();
  h+='<button class="btn ghost" data-act="sharereport" style="margin-top:4px">📊 Compartir reporte del mes</button>';
  var al=S.accounts.filter(function(a){return a.type==='credit'&&a.dueDay&&balance(a)<0}).map(function(a){return {a:a,d:nextDueCard(a)}}).sort(function(x,y){return x.d.days-y.d.days});
  if(al.length){h+='<h2>Pagos de tarjeta</h2>';al.forEach(function(o){h+='<div class="item alert '+(o.d.days<=3?'urg':'')+'"><div class="row"><div><div class="t">'+esc(o.a.name)+'</div><div class="m">'+dueLabel(o.d.days)+' · día '+dueDays(o.a).join(' y ')+(o.a.freq==='biweekly'?' (quincenal)':'')+(msiMonth(o.a)>0?' · MSI del mes: '+money(msiMonth(o.a)):'')+'</div></div><div style="text-align:right"><b class="neg">'+money(-balance(o.a))+'</b><br><button type="button" class="mini" data-act="pay" data-id="'+o.a.id+'">Pagar tarjeta</button></div></div></div>'})}
@@ -481,18 +481,6 @@ function cancelBillReminders(){try{var C=window.Capacitor;if(!C||!C.Plugins||!C.
    pagos lo sigue mostrando como "vence mañana". Se reprograma al arrancar y
    en cada save(). */
 function scheduleBillReminders(){registerLocalNotificationTap();try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled){cancelBillReminders();return false}var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.LocalNotifications)return false;var LN=C.Plugins.LocalNotifications;cancelBillReminders();var pp=(st.billReminderTime||'09:00').split(':'),hh=+pp[0],mm=+pp[1],now=Date.now(),list=billReminderTargets().slice(0,BILL_REMINDER_MAX),same=billReminderTargets(0).slice(0,SAME_DAY_MAX),notes=[];list.forEach(function(t,i){var rem=new Date(t.due+'T00:00:00');rem.setDate(rem.getDate()-1);var at=new Date(rem.getFullYear(),rem.getMonth(),rem.getDate(),hh,mm);if(at.getTime()<=now)at=new Date(now+60000);var body=t.kind==='card'?('Mañana es el pago límite de "'+t.name+'" · deuda '+money(t.amt)):('Mañana vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''));notes.push({id:BILL_REMINDER_FIRST_ID+i,title:t.kind==='card'?'Pago de tarjeta mañana':'Pago mañana',body:body,schedule:{at:at,allowWhileIdle:true},extra:{kind:t.kind,id:t.id}})});same.forEach(function(t,i){var due=new Date(t.due+'T00:00:00'),at2=new Date(due.getFullYear(),due.getMonth(),due.getDate(),hh,mm);if(at2.getTime()<=now)at2=new Date(now+60000);var body2=t.kind==='card'?('Hoy es el pago límite de "'+t.name+'" · deuda '+money(t.amt)):('Hoy vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''));notes.push({id:SAME_DAY_FIRST_ID+i,title:t.kind==='card'?'Pago de tarjeta hoy':'Pago hoy',body:body2,schedule:{at:at2,allowWhileIdle:true},extra:{kind:t.kind,id:t.id}})});if(notes.length)LN.schedule({notifications:notes});return true}catch(e){return false}}
-/* Pagos que vencen hoy o mañana, para el aviso dentro de la app (navegador,
-   sin notificaciones locales): se muestra un recordatorio en el Resumen. */
-function billsDueSoon(){var out=[];
- BL().forEach(function(b){var d=daysTo(b.next);if(d===0||d===1)out.push({kind:'bill',id:b.id,name:b.name,amt:+b.amt||0,days:d})});
- S.accounts.forEach(function(a){if(a.type!=='credit'||!a.dueDay)return;if(balance(a)>=0)return;var nd=nextDueCard(a);if(nd&&(nd.days===0||nd.days===1))out.push({kind:'card',id:a.id,name:a.name,amt:Math.max(0,-balance(a)),days:nd.days})});
- return out}
-/* Banner discreto en el Resumen: recuerda los pagos que vencen hoy o mañana.
-   Se muestra también en la app (APK), no solo en el navegador: es el respaldo
-   visible del aviso "un día antes" cuando la notificación no llegó o su hora
-   ya pasó. Respeta el interruptor del recordatorio de pagos: si está
-   desactivado, no se muestra. */
-function billDueSoonBanner(){try{var st=settingsDef();if(!st.notificationsEnabled||!st.billReminderEnabled)return '';var ds=billsDueSoon();if(!ds.length)return '';return '<div class="item alert urg"><div class="t">Recordatorio de pago</div><div class="m">'+ds.map(function(t){var w=t.days===0?'Hoy':'Mañana';return w+(t.kind==='card'?' es el pago límite de "'+t.name+'" · deuda '+money(t.amt):' vence "'+t.name+'"'+(t.amt?' · '+money(t.amt):''))}).join('<br>')+'</div></div>'}catch(e){return ''}}
 /* Botón de regreso de Android (APK, @capacitor/app v7): al registrar este listener
    Capacitor desactiva el comportamiento por defecto del botón, así que el handler
    decide: con un modal abierto lo cierra (close() ya consume la entrada de historial

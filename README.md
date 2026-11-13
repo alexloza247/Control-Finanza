@@ -124,7 +124,6 @@ Así se ve la app (con datos de ejemplo):
 - El aviso de "un día antes" solo se programa para fechas que aún no llegan (vence mañana o después); el aviso del mismo día cubre también lo que vence hoy. Si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un minuto, para que llegue hoy mismo y no se pierda en silencio.
 - Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso se programa una sola vez (no se repite) y los avisos viejos se cancelan antes de reprogramar, para no duplicar.
 - Al tocar la notificación de un pago, la app se abre directamente en su formulario para pagarlo (el pago próximo o la tarjeta); si el pago ya no existe, se abre el Resumen. El recordatorio diario de saldos sigue abriendo **Confirma tus saldos** como antes.
-- **Aviso dentro de la app:** si un pago vence hoy o mañana y el recordatorio está activado, el Resumen muestra un aviso discreto con el pago y su fecha, sin bloquear nada, tanto en el navegador como en la app (APK): es el respaldo visible del aviso "un día antes" cuando la notificación no llegó o su hora ya pasó.
 
 ### Notificaciones
 
