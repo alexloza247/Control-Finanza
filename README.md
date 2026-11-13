@@ -83,7 +83,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Recordatorio diario de saldos
 
-- En la pestaña **Configuración** eliges a qué hora quieres el recordatorio (por defecto, 23:00) y si está activado.
+- En la pestaña **Configuración**, sección **Notificaciones**, eliges a qué hora quieres el recordatorio (por defecto, 23:00) y si está activado. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
 - Cada día, a esa hora, la app te pide confirmar el saldo de cada cuenta: efectivo y débito por su saldo actual, y las tarjetas de crédito por su **crédito disponible** (deuda = límite − disponible), con los montos que marca la app ya escritos. Si una tarjeta no tiene límite guardado, o su deuda supera el límite, se pide su deuda actual (el disponible no puede representar una deuda mayor al límite). Un disponible mayor que el límite se toma como deuda $0.
 - Si corriges un saldo, se crea un movimiento de **Ajuste de saldo** (ingreso, gasto o pago de tarjeta, según el caso) para que la app quede acorde a lo que realmente tienes.
 - El recordatorio aparece una sola vez al día. En **Configuración** hay un botón **Probar recordatorio** para verlo en ese momento.
@@ -92,7 +92,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Recordatorio de pagos próximos
 
-- En la pestaña **Configuración** hay una sección **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere.
+- En la pestaña **Configuración**, sección **Notificaciones**, hay un bloque **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
 - Un día antes de cada fecha de pago, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
 - Solo se avisa de fechas que aún no llegan (vence mañana o después). Si un pago vence hoy o ya venció, no hay "día antes" que avisar para esa fecha; si la hora del aviso de hoy ya pasó, ese pago no se programa (la lista de pagos lo sigue mostrando como "vence mañana").
 - Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso se programa una sola vez (no se repite) y los avisos viejos se cancelan antes de reprogramar, para no duplicar.
@@ -101,14 +101,19 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Notificaciones
 
-- **En el navegador:** desde Configuración puedes activar las notificaciones; si el navegador lo permite y la app está abierta, el recordatorio diario llega también como notificación a la hora configurada.
+- La pestaña **Configuración** se divide en tres secciones: **Notificaciones**, **Apariencia** y **Datos**.
+- **Notificaciones** tiene un interruptor maestro **Notificaciones** (Activado/Desactivado) que controla todos los recordatorios. Nace **apagado** para las instalaciones nuevas, para que cada quien lo active y le dé permisos a la app; si ya tenías activado el recordatorio de saldos o el de pagos, al actualizar el maestro arranca prendido para no apagar tus avisos.
+- Al activar el maestro se pide el permiso de notificaciones (del sistema en la app, del navegador en web). Si se concede, se reprograman los recordatorios según sus interruptores individuales; si se deniega, el maestro queda apagado y la app avisa que hacen falta los permisos.
+- Al desactivar el maestro se cancelan TODAS las notificaciones programadas (saldos y pagos) y los recordatorios quedan inactivos: no llega notificación, no aparece el modal de las 23:00 en la app ni el aviso de pagos en el Resumen. Los interruptores individuales y sus horas se conservan al apagar y prender el maestro.
+- Con el maestro desactivado, los dos bloques de recordatorio se ven oscuros (apagados) y no se pueden tocar, con una notita de "Activa las notificaciones para usar los recordatorios". Con el maestro activado se ven normales y cada recordatorio se puede activar o desactivar por separado con su hora.
+- **En el navegador:** si el navegador lo permite y la app está abierta, el recordatorio diario llega también como notificación a la hora configurada.
 - **En el dispositivo (APK):** con Capacitor y el plugin LocalNotifications, el recordatorio diario se programa en el dispositivo a la hora configurada, para que funcione aunque la app esté cerrada. El recordatorio de pagos próximos también se programa en el dispositivo (un día antes, a la hora elegida), con el mismo mecanismo.
 - **Al tocar la notificación:** se abre el modal **Confirma tus saldos** de la app. En el APK funciona incluso si la app estaba cerrada: el toque la abre directamente en ese modal. En el navegador, el toque enfoca la app y abre el mismo modal.
 - Si no hay notificaciones disponibles, el aviso aparece dentro de la app al abrirla; Configuración lo dice claramente.
 
 ### Configuración y tema
 
-- Pestaña **Configuración** con la hora del recordatorio diario, su interruptor Activado/Desactivado (al apagarlo se cancela también la notificación programada en el dispositivo), el estado del permiso de notificaciones y el botón **Probar recordatorio**. También trae la sección **Recordatorio de pagos próximos** con su propio interruptor (desactivado por defecto) y su hora (por defecto, 09:00).
+- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales y Respaldo). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo.
 - **Tema / colores:** elige tus propios tres colores para crear tu tema: color principal, color secundario y color de fondo, más el color de la barra de navegación, con un botón para restablecer los colores de siempre. Se aplica en vivo y se guarda en el dispositivo.
 - **Modo Claro / Oscuro / Automático:** temas predefinidos de modo claro y oscuro, o automático según el dispositivo. En modo oscuro se conservan las superficies oscuras para que se siga leyendo bien, con tus colores principal y secundario encima.
 
