@@ -4,6 +4,28 @@
 
 App móvil para llevar el control de tus finanzas personales: efectivo, débito y crédito, en español y en pesos mexicanos (MXN).
 
+## Capturas de pantalla
+
+Así se ve la app (con datos de ejemplo):
+
+![Resumen: dinero disponible, dinero libre, pagos próximos y gráficas](screenshots/resumen.jpg)
+
+![Cuentas: efectivo, débito y crédito](screenshots/cuentas.jpg)
+
+![Movimientos con botón Repetir](screenshots/movimientos.jpg)
+
+![Búsqueda por monto en Movimientos](screenshots/busqueda.jpg)
+
+![Calendario con pagos próximos](screenshots/calendario.jpg)
+
+![Configuración: notificaciones](screenshots/notificaciones.jpg)
+
+![Configuración: apariencia](screenshots/apariencia.jpg)
+
+![Configuración: datos, respaldo, historial de ajustes y categorías](screenshots/datos.jpg)
+
+![Advertencia al gastar más de lo disponible](screenshots/advertencia.jpg)
+
 ## Funciones
 
 ### Cuentas
