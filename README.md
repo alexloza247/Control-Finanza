@@ -14,6 +14,8 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Barra de uso del límite de crédito y crédito disponible.
 - Crear, editar y eliminar cuentas (eliminar una cuenta también elimina sus movimientos).
 - Resumen de dinero disponible y deuda total en tarjetas. Los ingresos y gastos del mes del Resumen (y del widget) se calculan con la hora local del dispositivo, así que el último día del mes no se mezclan dos meses.
+- **Puedes gastar:** en el Resumen, junto al disponible, se muestra lo que queda de verdad después de restar los pagos próximos que vencen este mes y la mensualidad MSI de este mes; los pagos ya hechos este mes no se restan. Si el resultado es negativo, se muestra con su signo.
+- **Compartir reporte del mes:** botón en el Resumen que arma un texto bonito del mes actual (ingresos, gastos, balance, gastos por categoría con %, deuda en tarjetas y pagos próximos del mes) y lo comparte con el menú de compartir de la app (elige WhatsApp y el contacto) o con navigator.share en el navegador; si no hay cómo compartir, se copia al portapapeles. Nada se sube a ningún servidor. Si el mes no tiene movimientos, el texto lo dice.
 
 ### Movimientos
 
@@ -25,7 +27,8 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - Los movimientos se ordenan por fecha descendente y, dentro del mismo día, por hora descendente (el más reciente arriba); los movimientos sin hora van después de los que tienen hora ese día.
 - Editar y eliminar movimientos.
 - Cada movimiento muestra un ícono de lápiz (✎) para que se vea que se puede editar.
-- Buscador por nota, categoría o cuenta, y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
+- Buscador por nota, categoría, cuenta, monto y fecha ("500" encuentra el gasto de $500; "13/11", "13 nov" o "2026-11-13" encuentran los movimientos de ese día), y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
+- Cada movimiento tiene un botón **↻ Repetir** que abre el formulario prellenado con sus mismos datos (tipo, monto, cuenta, categoría, nota y términos MSI) pero con la fecha y hora de hoy; al guardar se crea un movimiento nuevo y el original no se toca.
 - Al guardar un movimiento aparece el aviso "Guardado".
 - Al crear una compra a MSI en tarjeta de crédito, el formulario muestra la mensualidad en vivo antes de guardar ("Mensualidad: $1,000.00 al mes · 12 pagos").
 - Lista de movimientos agrupada por mes, con ingresos y gastos del mes; dentro de cada mes, un pequeño separador por día ("11 de Noviembre 2026") antes de los movimientos de ese día.
@@ -95,8 +98,8 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 ### Recordatorio de pagos próximos
 
 - En la pestaña **Configuración**, sección **Notificaciones**, hay un bloque **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
-- Un día antes de cada fecha de pago, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
-- Solo se avisa de fechas que aún no llegan (vence mañana o después). Si un pago vence hoy o ya venció, no hay "día antes" que avisar para esa fecha; si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un minuto, para que llegue hoy mismo y no se pierda en silencio.
+- Un día antes de cada fecha de pago y también el mismo día, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
+- El aviso de "un día antes" solo se programa para fechas que aún no llegan (vence mañana o después); el aviso del mismo día cubre también lo que vence hoy. Si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un minuto, para que llegue hoy mismo y no se pierda en silencio.
 - Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso se programa una sola vez (no se repite) y los avisos viejos se cancelan antes de reprogramar, para no duplicar.
 - Al tocar la notificación de un pago, la app se abre directamente en su formulario para pagarlo (el pago próximo o la tarjeta); si el pago ya no existe, se abre el Resumen. El recordatorio diario de saldos sigue abriendo **Confirma tus saldos** como antes.
 - **Aviso dentro de la app:** si un pago vence hoy o mañana y el recordatorio está activado, el Resumen muestra un aviso discreto con el pago y su fecha, sin bloquear nada, tanto en el navegador como en la app (APK): es el respaldo visible del aviso "un día antes" cuando la notificación no llegó o su hora ya pasó.
@@ -115,13 +118,14 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Configuración y tema
 
-- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales y Respaldo). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo. La sección **Mis categorías** permite crear y eliminar tus categorías propias.
+- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales, Respaldo e Historial de ajustes). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo. La sección **Mis categorías** permite crear y eliminar tus categorías propias.
 - **Tema / colores:** elige tus propios tres colores para crear tu tema: color principal, color secundario y color de fondo, más el color de la barra de navegación, con un botón para restablecer los colores de siempre. Se aplica en vivo y se guarda en el dispositivo.
 - **Modo Claro / Oscuro / Automático:** temas predefinidos de modo claro y oscuro, o automático según el dispositivo. En modo oscuro se conservan las superficies oscuras para que se siga leyendo bien, con tus colores principal y secundario encima.
 
 ### Respaldo y datos
 
 - En la pestaña **Configuración**, sección **Respaldo**: **Ver, copiar o descargar respaldo** abre el texto completo del respaldo, que se puede copiar; **en la app** el botón **Compartir respaldo** lo manda al menú de compartir de Android (Drive, Archivos, Keep, etc.) porque el WebView no descarga archivos, y **en el navegador** el botón **Descargar archivo** lo descarga como `respaldo-finanzas.json`; y **Restaurar respaldo** te deja pegar un respaldo para recuperar tus datos; reemplaza los datos actuales. Antes de reemplazar nada, la app valida la estructura del respaldo (cuentas y movimientos deben ser listas, y pagos próximos, atajos, categorías y ajustes con su tipo correcto); si el respaldo pegado no es válido, la app avisa y no cambia nada.
+- **Historial de ajustes:** en Configuración > Datos, la sección **Historial de ajustes** muestra cada cambio hecho en "Confirma tus saldos" (cuenta, valor anterior → valor nuevo, fecha y hora), del más reciente al más viejo. Los ajustes viejos (anteriores a esta función) no aparecen: el historial empieza a partir de ahora. Si confirmar saldos no cambia nada, no se registra nada. El historial se incluye en el respaldo y se recupera al restaurar.
 - Los datos se guardan solo en este dispositivo, en el almacenamiento local del navegador (`localStorage`, clave `misfinanzas_v1`), y no se sincronizan con otros dispositivos ni con servidores.
 
 ## Cómo usarla
