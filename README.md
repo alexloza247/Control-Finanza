@@ -90,16 +90,25 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 - También muestra la fecha de tu última confirmación de saldos.
 - Al tocar la notificación del recordatorio se abre directamente el modal **Confirma tus saldos** para confirmar los saldos en ese momento.
 
+### Recordatorio de pagos próximos
+
+- En la pestaña **Configuración** hay una sección **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere.
+- Un día antes de cada fecha de pago, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
+- Solo se avisa de fechas que aún no llegan (vence mañana o después). Si un pago vence hoy o ya venció, no hay "día antes" que avisar para esa fecha; si la hora del aviso de hoy ya pasó, ese pago no se programa (la lista de pagos lo sigue mostrando como "vence mañana").
+- Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso se programa una sola vez (no se repite) y los avisos viejos se cancelan antes de reprogramar, para no duplicar.
+- Al tocar la notificación de un pago, la app se abre directamente en su formulario para pagarlo (el pago próximo o la tarjeta); si el pago ya no existe, se abre el Resumen. El recordatorio diario de saldos sigue abriendo **Confirma tus saldos** como antes.
+- **En el navegador (sin notificaciones locales):** si un pago vence hoy o mañana y el recordatorio está activado, el Resumen muestra un aviso discreto con el pago y su fecha, sin bloquear nada.
+
 ### Notificaciones
 
 - **En el navegador:** desde Configuración puedes activar las notificaciones; si el navegador lo permite y la app está abierta, el recordatorio diario llega también como notificación a la hora configurada.
-- **En el dispositivo (APK):** con Capacitor y el plugin LocalNotifications, el recordatorio diario se programa en el dispositivo a la hora configurada, para que funcione aunque la app esté cerrada.
+- **En el dispositivo (APK):** con Capacitor y el plugin LocalNotifications, el recordatorio diario se programa en el dispositivo a la hora configurada, para que funcione aunque la app esté cerrada. El recordatorio de pagos próximos también se programa en el dispositivo (un día antes, a la hora elegida), con el mismo mecanismo.
 - **Al tocar la notificación:** se abre el modal **Confirma tus saldos** de la app. En el APK funciona incluso si la app estaba cerrada: el toque la abre directamente en ese modal. En el navegador, el toque enfoca la app y abre el mismo modal.
 - Si no hay notificaciones disponibles, el aviso aparece dentro de la app al abrirla; Configuración lo dice claramente.
 
 ### Configuración y tema
 
-- Pestaña **Configuración** con la hora del recordatorio diario, su interruptor Activado/Desactivado (al apagarlo se cancela también la notificación programada en el dispositivo), el estado del permiso de notificaciones y el botón **Probar recordatorio**.
+- Pestaña **Configuración** con la hora del recordatorio diario, su interruptor Activado/Desactivado (al apagarlo se cancela también la notificación programada en el dispositivo), el estado del permiso de notificaciones y el botón **Probar recordatorio**. También trae la sección **Recordatorio de pagos próximos** con su propio interruptor (desactivado por defecto) y su hora (por defecto, 09:00).
 - **Tema / colores:** elige tus propios tres colores para crear tu tema: color principal, color secundario y color de fondo, más el color de la barra de navegación, con un botón para restablecer los colores de siempre. Se aplica en vivo y se guarda en el dispositivo.
 - **Modo Claro / Oscuro / Automático:** temas predefinidos de modo claro y oscuro, o automático según el dispositivo. En modo oscuro se conservan las superficies oscuras para que se siga leyendo bien, con tus colores principal y secundario encima.
 
