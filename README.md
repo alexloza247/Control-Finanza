@@ -114,7 +114,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Respaldo y datos
 
-- En la pestaña **Configuración**, sección **Respaldo**: **Ver, copiar o descargar respaldo** abre el texto completo del respaldo, que se puede copiar o descargar como archivo `respaldo-finanzas.json`; y **Restaurar respaldo** te deja pegar un respaldo para recuperar tus datos; reemplaza los datos actuales. Si el respaldo pegado no es válido, la app avisa y no cambia nada.
+- En la pestaña **Configuración**, sección **Respaldo**: **Ver, copiar o descargar respaldo** abre el texto completo del respaldo, que se puede copiar; **en la app** el botón **Compartir respaldo** lo manda al menú de compartir de Android (Drive, Archivos, Keep, etc.) porque el WebView no descarga archivos, y **en el navegador** el botón **Descargar archivo** lo descarga como `respaldo-finanzas.json`; y **Restaurar respaldo** te deja pegar un respaldo para recuperar tus datos; reemplaza los datos actuales. Si el respaldo pegado no es válido, la app avisa y no cambia nada.
 - Los datos se guardan solo en este dispositivo, en el almacenamiento local del navegador (`localStorage`, clave `misfinanzas_v1`), y no se sincronizan con otros dispositivos ni con servidores.
 
 ## Cómo usarla

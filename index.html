@@ -343,12 +343,21 @@ window.addEventListener('error',function(e){say('Error: '+(e.message||'desconoci
 window.addEventListener('popstate',function(){if(modalOpen()){modalHist=false;close()}});
 function ask(m,yes){open('<p>'+esc(m)+'</p><button class="btn del" id="y">Confirmar</button><button class="btn ghost" id="n">Cancelar</button>');$('n').onclick=close;$('y').onclick=yes}
 var TA='width:100%;margin-top:10px;font:12px monospace;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)';
-function backupForm(){open('<h2 style="margin-top:0">Respaldo</h2><div class="m">Copia este texto y guárdalo en una nota.</div><textarea id="bk" readonly rows="6" style="'+TA+'">'+esc(JSON.stringify(S))+'</textarea><button class="btn" id="cp" style="margin-top:10px">Copiar</button><button class="btn ghost" id="dl">Descargar archivo</button><button class="btn ghost" id="cn">Cerrar</button>');
+function hasCapShare(){try{var C=window.Capacitor;return !!(C&&C.Plugins&&C.Plugins.Share&&C.Plugins.Share.share)}catch(e){return false}}
+function downloadBackup(txt){try{var url=null;try{var blob=new Blob([txt],{type:'application/json'});url=URL.createObjectURL(blob)}catch(e){url='data:application/json;charset=utf-8,'+encodeURIComponent(txt)}var a=document.createElement('a');a.href=url;a.download='respaldo-finanzas.json';document.body.appendChild(a);a.click();setTimeout(function(){try{URL.revokeObjectURL(url)}catch(e){}a.remove()},200);return true}catch(e){return false}}
+/* En la app (Capacitor) el WebView no descarga enlaces <a download>: se comparte el
+   respaldo con el share sheet de Android. En el navegador se descarga el archivo. */
+function shareBackup(txt){
+ if(hasCapShare()){try{var p=window.Capacitor.Plugins.Share.share({title:'Respaldo Control de Finanzas',text:txt,dialogTitle:'Guardar respaldo'});if(p&&p.then){p.then(function(){say('Elige dónde guardar tu respaldo')},function(){say('No se pudo compartir. Copia el texto del respaldo.')})}else say('Elige dónde guardar tu respaldo');return}catch(e){}}
+ if(navigator.share){try{var q=navigator.share({title:'Respaldo Control de Finanzas',text:txt});if(q&&q.then){q.then(function(){say('Elige dónde guardar tu respaldo')},function(){say('No se pudo compartir. Copia el texto del respaldo.')})}else say('Elige dónde guardar tu respaldo');return}catch(e){}}
+ if(window.Capacitor){say('No se pudo compartir. Copia el texto del respaldo.');return}
+ if(downloadBackup(txt))say('Respaldo descargado');else say('No se pudo descargar. Copia el texto del respaldo.')}
+function backupForm(){open('<h2 style="margin-top:0">Respaldo</h2><div class="m">Copia este texto y guárdalo en una nota.</div><textarea id="bk" readonly rows="6" style="'+TA+'">'+esc(JSON.stringify(S))+'</textarea><button class="btn" id="cp" style="margin-top:10px">Copiar</button><button class="btn ghost" id="dl">'+(hasCapShare()?'Compartir respaldo':'Descargar archivo')+'</button><button class="btn ghost" id="cn">Cerrar</button>');
  $('cn').onclick=close;
  $('cp').onclick=function(){var t=$('bk');t.select();try{t.setSelectionRange(0,999999)}catch(e){}var ok=false;try{ok=document.execCommand('copy')}catch(e){}
   if(ok){say('Respaldo copiado');return}
   if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){say('Respaldo copiado')},function(){say('Mantén presionado el texto para copiarlo')})}else say('Mantén presionado el texto para copiarlo')}
- $('dl').onclick=function(){var txt=$('bk').value,url=null;try{var blob=new Blob([txt],{type:'application/json'});url=URL.createObjectURL(blob)}catch(e){url='data:application/json;charset=utf-8,'+encodeURIComponent(txt)}var a=document.createElement('a');a.href=url;a.download='respaldo-finanzas.json';document.body.appendChild(a);a.click();setTimeout(function(){try{URL.revokeObjectURL(url)}catch(e){}a.remove()},200);say('Respaldo descargado')}};
+ $('dl').onclick=function(){shareBackup($('bk').value)}};
 function restoreFromText(v){try{var o=JSON.parse(v);if(!(o.accounts&&o.tx))throw 0;S=o;save();render();say('Datos restaurados');return true}catch(x){say('El respaldo no es válido');return false}}
 function restoreForm(){open('<h2 style="margin-top:0">Restaurar respaldo</h2><div class="m">Pega aquí tu respaldo. Reemplazará los datos actuales.</div><textarea id="rs" rows="6" style="'+TA+'"></textarea><button class="btn" id="ok" style="margin-top:10px">Restaurar</button><button class="btn ghost" id="cn">Cancelar</button>');
  $('cn').onclick=close;
