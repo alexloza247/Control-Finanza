@@ -18,7 +18,9 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 ### Movimientos
 
 - Registrar ingresos, gastos y transferencias entre cuentas.
-- Categorías: Comida, Transporte, Casa, Servicios, Educación, Salud, Ocio, Compras, Sueldo y Otros, más categorías propias que puedes crear y eliminar.
+- Categorías: Comida, Transporte, Casa, Servicios, Educación, Salud, Ocio, Compras, Sueldo y Otros, más categorías propias que se crean y eliminan en **Configuración > Mis categorías** (también se puede crear una nueva desde el formulario de movimiento, con el chip "+ Nueva").
+- Si un gasto o una transferencia supera lo disponible en la cuenta origen (saldo en efectivo/débito, crédito disponible en tarjeta), aparece una advertencia con el monto, lo disponible y la cuenta, y te pregunta si quieres seguir o cancelar: al seguir, el movimiento se guarda aunque la cuenta quede en negativo; al cancelar, no se guarda nada y vuelves al formulario. Una compra a MSI cuenta por su monto completo contra el disponible. Lo mismo aplica al pagar una tarjeta desde una cuenta con saldo insuficiente. Los ingresos, los ajustes de saldo y pagar una tarjeta sin descontar de otra cuenta no muestran esta advertencia.
+- Los montos se redondean a centavos: un saldo de cero nunca se muestra como "-$0.00".
 - Nota, fecha y hora (formato 24 h) y monto con formato de moneda. Al crear un movimiento la hora se prellena con la hora actual y se puede cambiar; al editarlo se muestra su hora guardada. La hora se muestra en la lista junto a la fecha ("· 15:30"); los movimientos viejos sin hora se muestran igual que antes.
 - Los movimientos se ordenan por fecha descendente y, dentro del mismo día, por hora descendente (el más reciente arriba); los movimientos sin hora van después de los que tienen hora ese día.
 - Editar y eliminar movimientos.
@@ -113,7 +115,7 @@ App móvil para llevar el control de tus finanzas personales: efectivo, débito 
 
 ### Configuración y tema
 
-- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales y Respaldo). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo.
+- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales y Respaldo). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo. La sección **Mis categorías** permite crear y eliminar tus categorías propias.
 - **Tema / colores:** elige tus propios tres colores para crear tu tema: color principal, color secundario y color de fondo, más el color de la barra de navegación, con un botón para restablecer los colores de siempre. Se aplica en vivo y se guarda en el dispositivo.
 - **Modo Claro / Oscuro / Automático:** temas predefinidos de modo claro y oscuro, o automático según el dispositivo. En modo oscuro se conservan las superficies oscuras para que se siga leyendo bien, con tus colores principal y secundario encima.
 
