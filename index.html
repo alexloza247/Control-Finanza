@@ -55,6 +55,19 @@ nav button.on{color:var(--navink);opacity:1;background:rgba(0,0,0,.14);box-shado
 .btn.del{background:none;color:var(--r);border:1px solid var(--r);margin-top:8px}
 .sheet{position:fixed;inset:0;background:#0008;z-index:10;display:flex;align-items:flex-end;justify-content:center}
 .box{background:var(--surf);width:100%;max-width:520px;max-height:92%;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+/* Calculadora del campo Monto: capa propia por encima del modal del
+   formulario (z-index 15 > 10), para no destruirlo al abrirla. */
+.calcsheet{position:fixed;inset:0;background:#0008;z-index:15;display:flex;align-items:flex-end;justify-content:center}
+.calcdisp{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:right;min-height:66px}
+.calcdisp .expr{font-size:15px;color:var(--mute2);min-height:20px;word-break:break-all}
+.calcdisp .res{font-size:28px;font-weight:800}
+.calcgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.calcgrid button{padding:16px 0;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:20px;font-weight:600}
+.calcgrid button.op{background:var(--ink);color:var(--bg)}
+.calcgrid button.eq{background:var(--primary);color:#fff;border-color:var(--primary)}
+.calcgrid button.w2{grid-column:span 2}
+.calcgrid button.h2{grid-row:span 2}
+.btn:disabled{opacity:.45}
 label{display:block;font-size:13px;color:var(--mute2);margin:12px 0 4px}
 input,select{width:100%;font:inherit;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}.seg button{flex:1 1 30%;padding:10px 6px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px;font-weight:600;white-space:nowrap}
@@ -96,6 +109,7 @@ a.lnk{color:var(--g);font-weight:600;background:none;border:0;font:inherit;paddi
 <button class="fab" id="fab" aria-label="Agregar movimiento">+</button>
 <nav id="nav"></nav>
 <div id="modal"></div>
+<div id="calc"></div>
 <script>
 (function(){
 var KEY='misfinanzas_v1',S={accounts:[],tx:[]},tab='home';
@@ -346,13 +360,14 @@ function accForm(a){a=a||{type:'cash'};var cr=a.type==='credit';
  if(a.id)$('dl').onclick=function(){ask('¿Eliminar esta cuenta y sus movimientos?',function(){S.accounts=S.accounts.filter(function(x){return x.id!==a.id});S.tx=S.tx.filter(function(t){return t.acc!==a.id&&t.to!==a.id});save();close();render()})}}
 
 function txForm(t,preset){t=t||{type:'expense',date:today(),time:nowTime(),acc:''};if(preset)for(var k in preset)t[k]=preset[k];var type=t.type,orig=t._orig||(t.id?{id:t.id,type:t.type,amt:t.amt,acc:t.acc,to:t.to}:null);t._orig=orig;
- function body(){return '<label>Monto</label><input id="f_amt" type="number" inputmode="decimal" value="'+(t.amt||'')+'" placeholder="0.00">'+
+ function body(){return '<label>Monto</label><div style="display:flex;gap:8px"><input id="f_amt" type="number" inputmode="decimal" value="'+(t.amt||'')+'" placeholder="0.00" style="flex:1;min-width:0"><button type="button" class="mini" id="f_calc" title="Calculadora" aria-label="Abrir calculadora" style="margin-top:0;flex:none;font-size:20px;padding:9px 14px">🧮</button></div>'+
  '<label>'+(type==='income'?'Cuenta que recibe':'Desde la cuenta')+'</label><select id="f_acc">'+accOptsE(t.acc)+'</select>'+(type==='expense'&&acc(t.acc)&&acc(t.acc).type==='credit'?'<label>Meses sin intereses</label>'+msiSelHtml(t)+'<div class="m" id="msi_prev" style="margin-top:6px"></div>':'')+
  (type==='transfer'?'<label>Hacia la cuenta (para pagar tarjeta, elígela aquí)</label><select id="f_to">'+accOptsE(t.to,t.acc)+'</select>':'<label>Categoría</label>'+catPicker('f_cat',t.cat)+'')+
  '<label>Nota</label><input id="f_note" value="'+esc(t.note||'')+'" placeholder="Opcional"><div class="two"><div><label>Fecha</label><input id="f_date" type="date" value="'+t.date+'"></div><div><label>Hora</label><input id="f_time" type="time" value="'+esc(t.time||'')+'"></div></div>'}
  function keep(){t.amt=pf($('f_amt').value)||0;t.acc=$('f_acc').value;if($('f_msi')){var ms=$('f_msi').value;t.msiSel=ms;t.msi=ms==='custom'?(parseInt($('f_msin')?$('f_msin').value:0,10)||0):+ms}else{t.msi=0}if($('f_to'))t.to=$('f_to').value;if($('f_cat'))t.cat=$('f_cat').value;t.note=$('f_note').value;t.date=$('f_date').value||today();t.time=$('f_time')?$('f_time').value||'':(t.time||'')}
  function draw(){open('<h2 style="margin-top:0">'+(t.id?'Editar movimiento':'Nuevo movimiento')+'</h2><div class="seg" id="ts">'+[['expense','Gasto'],['income','Ingreso'],['transfer','Transferir / Pagar']].map(function(k){return '<button data-k="'+k[0]+'" class="'+(type===k[0]?'on':'')+'">'+k[1]+'</button>'}).join('')+'</div><div id="bd">'+body()+'</div><div style="margin-top:16px"><button class="btn" id="sv">Guardar</button>'+(t.id?'<button class="btn del" id="dl">Eliminar</button>':'')+'<button class="btn ghost" id="cn">Cancelar</button></div>');
   $('f_acc').onchange=function(){keep();draw()};
+  if($('f_calc'))$('f_calc').onclick=function(){openCalc()};
   function updMsi(){var el=$('msi_prev');if(!el)return;var amt=pf($('f_amt').value)||0,ms=+t.msi||0;el.textContent=amt>0&&ms>1?('Mensualidad: '+money(amt/ms)+' al mes · '+ms+' pagos'):(amt>0?'Pago único, sin mensualidades':'')};if($('f_amt'))$('f_amt').oninput=updMsi;if($('f_msin'))$('f_msin').oninput=function(){keep();updMsi()};updMsi();
   if($('f_msi'))$('f_msi').onchange=function(){keep();draw();if($('f_msin'))$('f_msin').focus()};
   $('ts').onclick=function(e){var k=e.target.getAttribute('data-k');if(!k)return;keep();type=k;t.type=k;if(k==='transfer'&&t.to===t.acc)t.to='';draw()};
@@ -366,13 +381,94 @@ function txForm(t,preset){t=t||{type:'expense',date:today(),time:nowTime(),acc:'
   if(t.id)$('dl').onclick=function(){S.tx=S.tx.filter(function(x){return x.id!==t.id});save();close();render()}}
  draw()}
 
+/* Calculadora del campo Monto (solo formulario de movimiento): el botón 🧮
+   junto al Monto abre esta calculadora en su propia capa (#calc) por encima
+   del modal del formulario, para no destruirlo. "Insertar" pone el resultado
+   (redondeado a centavos) en el campo Monto y cierra; cerrar sin insertar
+   deja el Monto como estaba. Precedencia estándar: × ÷ antes que + −. */
+var calcTok=[],calcCur='',calcEq=false,calcErr=false,calcRes=null,calcLastExpr='';
+function calcOpen(){try{var m=$('calc');return !!(m&&m.innerHTML.trim())}catch(e){return false}}
+function calcNum(s){var n=parseFloat(s);return isFinite(n)?n:null}
+/* Redondeo a centavos: evita el ruido de punto flotante (0.1+0.2=0.3). */
+function calcRound(n){return Math.round((+n||0)*100)/100}
+function calcDisp(n){var r=calcRound(n);return String(r)}
+function calcEval(tok){var t=tok.slice(),i,a,b,r;
+ for(i=0;i<t.length;i++){if(t[i]==='×'||t[i]==='÷'){a=t[i-1];b=t[i+1];if(typeof a!=='number'||typeof b!=='number')return null;if(t[i]==='÷'&&b===0)return null;r=t[i]==='×'?a*b:a/b;t.splice(i-1,3,r);i-=1}}
+ for(i=0;i<t.length;i++){if(t[i]==='+'||t[i]==='-'){a=t[i-1];b=t[i+1];if(typeof a!=='number'||typeof b!=='number')return null;r=t[i]==='+'?a+b:a-b;t.splice(i-1,3,r);i-=1}}
+ return (t.length===1&&typeof t[0]==='number')?t[0]:null}
+function calcExprTxt(){var s=calcTok.map(function(x){return typeof x==='number'?String(x):x}).join(' ');if(calcCur)s+=(s?' ':'')+calcCur;return s}
+function calcShow(){var ex=$('calc_expr'),rs=$('calc_res'),ins=$('calc_ins');if(!ex)return;
+ ex.textContent=(calcEq&&calcLastExpr)?calcLastExpr:(calcExprTxt()||' ');
+ if(calcErr){rs.textContent='Error';rs.style.color='var(--r)'}
+ else{rs.style.color='';var last=calcTok.length?calcTok[calcTok.length-1]:null;
+  if(typeof last==='string'&&calcTok.length>1)last=calcTok[calcTok.length-2];
+  rs.textContent=calcRes!==null?calcDisp(calcRes):(typeof last==='number'?calcDisp(last):'0')}
+ if(ins)ins.disabled=calcRes===null}
+function calcClear(){calcTok=[];calcCur='';calcEq=false;calcErr=false;calcRes=null;calcLastExpr=''}
+function calcPushCur(){var n=calcNum(calcCur);if(n===null)return false;calcTok.push(n);calcCur='';return true}
+function calcDigit(d){if(calcErr)calcClear();if(calcEq){calcTok=[];calcCur='';calcEq=false;calcLastExpr=''}
+ if(d==='.'&&calcCur.indexOf('.')>=0)return;
+ if(calcCur===''&&d==='.')calcCur='0.';
+ else if(calcCur==='0'&&d!=='.')calcCur=d;
+ else if(calcCur==='-0'&&d!=='.')calcCur='-'+d;
+ else{if(calcCur.length>=12)return;calcCur+=d}
+ calcRes=calcNum(calcCur)}
+function calcOp(op){if(calcErr)return;
+ if(calcEq){calcTok=[calcRes];calcCur='';calcEq=false}
+ if(calcCur!==''&&calcCur!=='-'&&calcCur!=='.'&&calcCur!=='-.'){calcPushCur();calcTok.push(op)}
+ else if(calcCur===''&&calcTok.length&&typeof calcTok[calcTok.length-1]==='string'){calcTok[calcTok.length-1]=op}
+ else if(calcCur===''&&!calcTok.length&&op==='-'){calcCur='-'}
+ else if(calcCur===''&&calcTok.length&&typeof calcTok[calcTok.length-1]==='number'){calcTok.push(op)}
+ else return;
+ calcRes=null}
+function calcEqPress(){if(calcErr)return;
+ if(calcCur!==''&&calcCur!=='-'&&calcCur!=='.'&&calcCur!=='-.')calcPushCur();
+ while(calcTok.length&&typeof calcTok[calcTok.length-1]==='string')calcTok.pop();
+ if(!calcTok.length){calcRes=null;return}
+ var r=calcEval(calcTok);
+ if(r===null||!isFinite(r)){calcErr=true;calcRes=null;calcTok=[];calcCur='';return}
+ calcLastExpr=calcExprTxt();calcRes=calcRound(r);calcTok=[];calcCur=String(calcRes);calcEq=true}
+function calcBack(){if(calcErr){calcClear();return}
+ if(calcEq){calcEq=false}
+ if(calcCur!==''){calcCur=calcCur.slice(0,-1);calcRes=calcNum(calcCur);return}
+ if(calcTok.length){var last=calcTok.pop();
+  if(typeof last==='number'){calcCur=String(last).slice(0,-1);calcRes=calcNum(calcCur)}
+  else calcRes=null}}
+function openCalc(){var el=$('f_amt'),v=el?pf(el.value):NaN;
+ calcClear();
+ if(isFinite(v)){calcCur=String(v);calcRes=v}
+ $('calc').innerHTML='<div class="calcsheet" id="csh"><div class="box"><h2 style="margin-top:0">Calculadora</h2>'+
+ '<div class="calcdisp"><div class="expr" id="calc_expr"></div><div class="res" id="calc_res">0</div></div>'+
+ '<div class="calcgrid" id="calc_grid">'+
+ [['clr','C',''],['bk','⌫',''],['div','÷','op'],['mul','×','op'],
+  ['d7','7',''],['d8','8',''],['d9','9',''],['sub','-','op'],
+  ['d4','4',''],['d5','5',''],['d6','6',''],['add','+','op'],
+  ['d1','1',''],['d2','2',''],['d3','3',''],['eq','=','eq h2'],
+  ['d0','0','w2'],['dot','.','']].map(function(b){return '<button type="button" data-k="'+b[0]+'" class="'+b[2]+'">'+b[1]+'</button>'}).join('')+
+ '</div><div style="margin-top:12px"><button class="btn" id="calc_ins">Insertar</button><button class="btn ghost" id="calc_cn">Cancelar</button></div></div></div>';
+ $('calc_grid').onclick=function(e){var b=e.target;while(b&&b.tagName!=='BUTTON')b=b.parentNode;if(!b)return;var k=b.getAttribute('data-k');if(!k)return;
+  if(k==='clr')calcClear();
+  else if(k==='bk')calcBack();
+  else if(k==='eq')calcEqPress();
+  else if(k==='add'||k==='sub'||k==='mul'||k==='div')calcOp(k==='add'?'+':k==='sub'?'-':k==='mul'?'×':'÷');
+  else if(k==='dot')calcDigit('.');
+  else if(k.charAt(0)==='d')calcDigit(k.slice(1));
+  calcShow()};
+ $('calc_ins').onclick=function(){if(calcRes===null)return;var v=calcRound(calcRes),f=$('f_amt');
+  if(f){f.value=fmtNum(String(v));try{f.dispatchEvent(new Event('input',{bubbles:true}))}catch(e){}}
+  closeCalc()};
+ $('calc_cn').onclick=closeCalc;
+ $('csh').onclick=function(e){if(e.target===$('csh'))closeCalc()};
+ calcShow()}
+function closeCalc(){$('calc').innerHTML=''}
+
 function say(m){var d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;z-index:20;text-align:center';document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
 window.addEventListener('error',function(e){say('Error: '+(e.message||'desconocido'))});
 /* Regreso del navegador / sistema (web): si hay un modal abierto, cerrarlo en lugar
    de salir de la app. modalHist se apaga antes de cerrar para que close() no vuelva
    a pedir history.back() y no se forme un bucle. Sin modal, el navegador hace lo de
    siempre (salir de la página). */
-window.addEventListener('popstate',function(){if(modalOpen()){modalHist=false;close()}});
+window.addEventListener('popstate',function(){if(calcOpen()){closeCalc();if(modalOpen()){try{if(window.history&&history.pushState){history.pushState({modal:1},'');modalHist=true}}catch(e){}}return}if(modalOpen()){modalHist=false;close()}});
 function ask(m,yes){open('<p>'+esc(m)+'</p><button class="btn del" id="y">Confirmar</button><button class="btn ghost" id="n">Cancelar</button>');$('n').onclick=close;$('y').onclick=yes}
 /* Disponible para gastar, transferir o pagar desde una cuenta: saldo en
    efectivo/débito, crédito disponible (límite − deuda) en tarjetas. */
@@ -508,7 +604,7 @@ var widgetLaunchTried=0;
 function checkWidgetLaunch(){try{var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.App)return;var App=C.Plugins.App;checkPendingWidgetAction();if(!App.getLaunchUrl)return;var r=App.getLaunchUrl();if(!r||!r.then)return;r.then(function(res){if(res&&res.url){handleWidgetUrl(res.url);return}widgetLaunchTried++;if(widgetLaunchTried<3)setTimeout(checkWidgetLaunch,900)},function(){widgetLaunchTried++;if(widgetLaunchTried<3)setTimeout(checkWidgetLaunch,900)})}catch(e){}}
 function registerWidgetLinks(){try{if(widgetLinksRegistered)return;var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.App)return;var App=C.Plugins.App;if(App.addListener){App.addListener('appUrlOpen',function(ev){try{if(ev&&ev.url)handleWidgetUrl(ev.url)}catch(e){}});App.addListener('appStateChange',function(ev){try{if(ev&&ev.isActive)checkPendingWidgetAction()}catch(e){}})}widgetLinksRegistered=true;setTimeout(checkWidgetLaunch,350)}catch(e){}}
 var backRegistered=false;
-function registerBackButton(){try{if(backRegistered)return;var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.App)return;var App=C.Plugins.App;if(!App.addListener)return;App.addListener('backButton',function(ev){if(modalOpen()){close();return}try{if(ev&&ev.canGoBack){window.history.back()}else if(App.exitApp){App.exitApp()}}catch(e){}});backRegistered=true}catch(e){}}
+function registerBackButton(){try{if(backRegistered)return;var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.App)return;var App=C.Plugins.App;if(!App.addListener)return;App.addListener('backButton',function(ev){if(calcOpen()){closeCalc();return}if(modalOpen()){close();return}try{if(ev&&ev.canGoBack){window.history.back()}else if(App.exitApp){App.exitApp()}}catch(e){}});backRegistered=true}catch(e){}}
 /* Interruptor maestro de Notificaciones: al activarlo se pide el permiso
    (sistema en la app con Capacitor, navegador en web) y, si se concede, se
    reprograman los recordatorios según sus interruptores individuales. Si se
