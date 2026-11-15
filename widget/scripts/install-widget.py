@@ -3,7 +3,7 @@
 
 El repo NO tiene la carpeta android/ commiteada: el workflow la genera con
 `npx cap add android` + `npx cap sync` en cada build. Este script corre
-DESPUES de ese paso y hace tres cosas:
+DESPUES de ese paso y hace cuatro cosas:
 
 1. Copia widget/android/src/main/{java,res} a android/app/src/main/.
 2. Parchea android/app/src/main/AndroidManifest.xml (si falta):
@@ -14,9 +14,15 @@ DESPUES de ese paso y hace tres cosas:
      widget se deslice arriba/abajo (ListView), y
    - agrega a MainActivity el intent-filter del enlace controlfinanzas://widget/...
      para que el toque en el widget abra la app con el formulario prellenado.
+3. Declara en el manifiesto <queries> con el intent ACTION_IMAGE_CAPTURE,
+   para que la foto del ticket con capture="environment" abra la cámara:
+   en Android 11+ sin esa declaración el WebView de Capacitor no resuelve
+   la app de cámara y el botón de foto solo abre la galería. No es un
+   permiso (el intent lo resuelve la app de cámara del sistema), por eso
+   NO se declara android.permission.CAMERA.
 
-Es idempotente: si ya existen el receiver, el servicio o el intent-filter,
-no duplica nada.
+Es idempotente: si ya existen el receiver, el servicio, el intent-filter
+o la declaración de <queries>, no duplica nada.
 Uso: python3 widget/scripts/install-widget.py  (desde la raiz del repo)
 """
 import os
@@ -102,6 +108,29 @@ def patch_manifest(path):
             data.set(a("scheme"), "controlfinanzas")
             data.set(a("host"), "widget")
             changed = True
+
+    # 4) Visibilidad de la cámara para la foto del ticket (Android 11+).
+    #    El input "Tomar foto" lleva capture="environment": Capacitor lanza
+    #    el intent ACTION_IMAGE_CAPTURE y antes verifica con resolveActivity
+    #    que haya una app de cámara. En Android 11+ ese chequeo devuelve
+    #    null si el manifiesto no declara <queries> con ese intent, y
+    #    Capacitor cae al selector de archivos (solo galería), que es el bug
+    #    reportado. No es un permiso: el intent lo atiende la app de cámara
+    #    del sistema, así que NO se declara android.permission.CAMERA
+    #    (declararlo solo agregaría un aviso que, si se niega, cierra el
+    #    selector sin abrir nada).
+    has_cam_query = False
+    for q in root.findall("queries"):
+        for intent in q.findall("intent"):
+            for act in intent.findall("action"):
+                if act.get(a("name")) == "android.media.action.IMAGE_CAPTURE":
+                    has_cam_query = True
+    if not has_cam_query:
+        queries = ET.SubElement(root, "queries")
+        intent = ET.SubElement(queries, "intent")
+        act = ET.SubElement(intent, "action")
+        act.set(a("name"), "android.media.action.IMAGE_CAPTURE")
+        changed = True
 
     if changed:
         tree.write(path, encoding="utf-8", xml_declaration=True)

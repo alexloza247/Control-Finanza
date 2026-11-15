@@ -372,16 +372,24 @@ function txForm(t,preset){t=t||{type:'expense',date:today(),time:nowTime(),acc:'
  '<label>'+(type==='income'?'Cuenta que recibe':'Desde la cuenta')+'</label><select id="f_acc">'+accOptsE(t.acc)+'</select>'+(type==='expense'&&acc(t.acc)&&acc(t.acc).type==='credit'?'<label>Meses sin intereses</label>'+msiSelHtml(t)+'<div class="m" id="msi_prev" style="margin-top:6px"></div>':'')+
  (type==='transfer'?'<label>Hacia la cuenta (para pagar tarjeta, elígela aquí)</label><select id="f_to">'+accOptsE(t.to,t.acc)+'</select>':'<label>Categoría</label>'+catPicker('f_cat',t.cat)+'')+
  '<label>Nota</label><input id="f_note" value="'+esc(t.note||'')+'" placeholder="Opcional"><div class="two"><div><label>Fecha</label><input id="f_date" type="date" value="'+t.date+'"></div><div><label>Hora</label><input id="f_time" type="time" value="'+esc(t.time||'')+'"></div></div>'+
- '<label>Foto del ticket (opcional)</label>'+(t.photo?'<div style="display:flex;gap:8px;align-items:center"><img src="'+t.photo+'" alt="Foto del ticket" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:pointer" id="f_photo_prev"><button type="button" class="mini alt" id="f_photo_chg" style="margin-top:0">Cambiar</button><button type="button" class="mini alt" id="f_photo_del" style="margin-top:0">Quitar</button></div>':'<button type="button" class="mini alt" id="f_photo_add" style="margin-top:0">📷 Tomar foto o elegir de la galería</button>')+
- '<input type="file" id="f_photo" accept="image/*" style="display:none">'}
+ '<label>Foto del ticket (opcional)</label>'+(t.photo?'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><img src="'+t.photo+'" alt="Foto del ticket" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:pointer" id="f_photo_prev"><button type="button" class="mini alt" id="f_photo_chg_cam" style="margin-top:0">📷 Tomar foto</button><button type="button" class="mini alt" id="f_photo_chg_gal" style="margin-top:0">🖼️ Elegir</button><button type="button" class="mini alt" id="f_photo_del" style="margin-top:0">Quitar</button></div>':'<div style="display:flex;gap:8px"><button type="button" class="mini alt" id="f_photo_cam" style="margin-top:0">📷 Tomar foto</button><button type="button" class="mini alt" id="f_photo_gal" style="margin-top:0">🖼️ Elegir de la galería</button></div>')+
+ '<input type="file" id="f_photo_cam_in" accept="image/*" capture="environment" style="display:none">'+
+ '<input type="file" id="f_photo_gal_in" accept="image/*" style="display:none">'}
  function keep(){t.amt=pf($('f_amt').value)||0;t.acc=$('f_acc').value;if($('f_msi')){var ms=$('f_msi').value;t.msiSel=ms;t.msi=ms==='custom'?(parseInt($('f_msin')?$('f_msin').value:0,10)||0):+ms}else{t.msi=0}if($('f_to'))t.to=$('f_to').value;if($('f_cat'))t.cat=$('f_cat').value;t.note=$('f_note').value;t.date=$('f_date').value||today();t.time=$('f_time')?$('f_time').value||'':(t.time||'')}
  function draw(){open('<h2 style="margin-top:0">'+(t.id?'Editar movimiento':'Nuevo movimiento')+'</h2><div class="seg" id="ts">'+[['expense','Gasto'],['income','Ingreso'],['transfer','Transferir / Pagar']].map(function(k){return '<button data-k="'+k[0]+'" class="'+(type===k[0]?'on':'')+'">'+k[1]+'</button>'}).join('')+'</div><div id="bd">'+body()+'</div><div style="margin-top:16px"><button class="btn" id="sv">Guardar</button>'+(t.id?'<button class="btn del" id="dl">Eliminar</button>':'')+'<button class="btn ghost" id="cn">Cancelar</button></div>');
   $('f_acc').onchange=function(){keep();draw()};
   if($('f_calc'))$('f_calc').onclick=function(){openCalc()};
-  var fp=$('f_photo');
-  if(fp)fp.onchange=function(){var f=fp.files&&fp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){photoCompress(r.result,function(u){t.photo=u;keep();draw()})};r.onerror=function(){};try{r.readAsDataURL(f)}catch(e){}fp.value=''};
-  var pa=$('f_photo_add');if(pa)pa.onclick=function(){var i=$('f_photo');if(i)i.click()};
-  var pc=$('f_photo_chg');if(pc)pc.onclick=function(){var i=$('f_photo');if(i)i.click()};
+  /* Foto del ticket: dos entradas, un mismo flujo. "Tomar foto" lleva
+     capture="environment" para que el WebView abra la cámara directo;
+     "Elegir de la galería" no lleva capture y abre el selector de
+     archivos. Un solo input sin capture solo abría la galería. */
+  function photoPicked(input){var f=input.files&&input.files[0];if(!f)return;var r=new FileReader();r.onload=function(){photoCompress(r.result,function(u){t.photo=u;keep();draw()})};r.onerror=function(){};try{r.readAsDataURL(f)}catch(e){}input.value=''}
+  var fpc=$('f_photo_cam_in');if(fpc)fpc.onchange=function(){photoPicked(fpc)};
+  var fpg=$('f_photo_gal_in');if(fpg)fpg.onchange=function(){photoPicked(fpg)};
+  var pac=$('f_photo_cam');if(pac)pac.onclick=function(){var i=$('f_photo_cam_in');if(i)i.click()};
+  var pag=$('f_photo_gal');if(pag)pag.onclick=function(){var i=$('f_photo_gal_in');if(i)i.click()};
+  var pcc=$('f_photo_chg_cam');if(pcc)pcc.onclick=function(){var i=$('f_photo_cam_in');if(i)i.click()};
+  var pcg=$('f_photo_chg_gal');if(pcg)pcg.onclick=function(){var i=$('f_photo_gal_in');if(i)i.click()};
   var pd=$('f_photo_del');if(pd)pd.onclick=function(){t.photo='';keep();draw()};
   var pp=$('f_photo_prev');if(pp)pp.onclick=function(){viewPhotoData(t.photo)};
   function updMsi(){var el=$('msi_prev');if(!el)return;var amt=pf($('f_amt').value)||0,ms=+t.msi||0;el.textContent=amt>0&&ms>1?('Mensualidad: '+money(amt/ms)+' al mes · '+ms+' pagos'):(amt>0?'Pago único, sin mensualidades':'')};if($('f_amt'))$('f_amt').oninput=updMsi;if($('f_msin'))$('f_msin').oninput=function(){keep();updMsi()};updMsi();
@@ -481,9 +489,17 @@ function openCalc(){var el=$('f_amt'),v=el?pf(el.value):NaN;
  calcShow()}
 function closeCalc(){$('calc').innerHTML=''}
 
-/* Foto del ticket en los movimientos: se adjunta desde la cámara o la
-   galería con un input de archivo (el selector del sistema lo maneja, sin
-   plugins ni permisos nuevos). La foto se comprime en el cliente (canvas)
+/* Foto del ticket en los movimientos: dos botones, "📷 Tomar foto" (input
+   con capture="environment", abre la cámara directo) y "🖼️ Elegir de la
+   galería" (input sin capture, abre el selector de archivos). Un solo
+   input sin capture solo abría la galería en el WebView de Capacitor.
+   Para que la cámara se lance en Android 11+, el manifiesto de la app
+   debe declarar <queries> con el intent ACTION_IMAGE_CAPTURE (lo agrega
+   widget/scripts/install-widget.py en el build): sin eso, Capacitor no
+   resuelve la app de cámara y cae al selector de archivos. NO hace falta
+   el permiso CAMERA: el intent lo resuelve la app de cámara del sistema,
+   y declararlo solo agregaría un aviso de permiso que, si se niega,
+   cierra el selector sin abrir nada. La foto se comprime en el cliente (canvas)
    antes de guardarse como data URL en el movimiento, para no llenar el
    almacenamiento local: máximo 1024 px por el lado mayor, JPEG ~0.7; si
    sigue pesando más de ~500 KB, segundo intento a 768 px y calidad 0.55.
