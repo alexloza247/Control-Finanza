@@ -391,7 +391,7 @@ function txForm(t,preset){t=t||{type:'expense',date:today(),time:nowTime(),acc:'
   var pcc=$('f_photo_chg_cam');if(pcc)pcc.onclick=function(){var i=$('f_photo_cam_in');if(i)i.click()};
   var pcg=$('f_photo_chg_gal');if(pcg)pcg.onclick=function(){var i=$('f_photo_gal_in');if(i)i.click()};
   var pd=$('f_photo_del');if(pd)pd.onclick=function(){t.photo='';keep();draw()};
-  var pp=$('f_photo_prev');if(pp)pp.onclick=function(){viewPhotoData(t.photo)};
+  var pp=$('f_photo_prev');if(pp)pp.onclick=function(){viewPhotoData(t.photo,t.date)};
   function updMsi(){var el=$('msi_prev');if(!el)return;var amt=pf($('f_amt').value)||0,ms=+t.msi||0;el.textContent=amt>0&&ms>1?('Mensualidad: '+money(amt/ms)+' al mes · '+ms+' pagos'):(amt>0?'Pago único, sin mensualidades':'')};if($('f_amt'))$('f_amt').oninput=updMsi;if($('f_msin'))$('f_msin').oninput=function(){keep();updMsi()};updMsi();
   if($('f_msi'))$('f_msi').onchange=function(){keep();draw();if($('f_msin'))$('f_msin').focus()};
   $('ts').onclick=function(e){var k=e.target.getAttribute('data-k');if(!k)return;keep();type=k;t.type=k;if(k==='transfer'&&t.to===t.acc)t.to='';draw()};
@@ -510,11 +510,59 @@ function photoDraw(img,w,h,max,q){var s=Math.min(1,max/Math.max(w,h)),cw=Math.ma
 function photoCompress(dataUrl,done){function fin(u){done(u)}try{var img=new Image();img.onload=function(){try{var w=img.naturalWidth||img.width||0,h=img.naturalHeight||img.height||0;if(!w||!h){fin(dataUrl);return}var u=photoDraw(img,w,h,PHOTO_MAX,0.7);if(u&&u.length>PHOTO_LIMIT){var u2=photoDraw(img,w,h,PHOTO_MAX2,0.55);if(u2)u=u2}fin(u||dataUrl)}catch(e){fin(dataUrl)}};img.onerror=function(){fin(dataUrl)};img.src=dataUrl}catch(e){fin(dataUrl)}}
 /* Vista en grande de la foto del ticket: capa propia (#photoview, z-index 15
    como la calculadora) para no destruir el formulario si se abre desde
-   Editar. Se cierra con el botón, tocando fuera o con el regreso. */
+   Editar. Se cierra con el botón, tocando fuera o con el regreso. El botón
+   "Descargar" guarda la foto que se está viendo (ver downloadPhoto). */
 function photoViewOpen(){try{var m=$('photoview');return !!(m&&m.innerHTML.trim())}catch(e){return false}}
-function viewPhotoData(u){if(!u)return;$('photoview').innerHTML='<div class="photosheet" id="pvsh"><div class="box" style="text-align:center"><img src="'+u+'" alt="Foto del ticket" style="max-width:100%;max-height:70vh;border-radius:12px"><button type="button" class="btn ghost" id="pv_cn" style="margin-top:12px">Cerrar</button></div></div>';$('pv_cn').onclick=closePhoto;$('pvsh').onclick=function(e){if(e.target===$('pvsh'))closePhoto()}}
-function viewPhoto(id){var t=S.tx.filter(function(x){return x.id===id})[0];if(!t||!t.photo)return;viewPhotoData(t.photo)}
+function viewPhotoData(u,d){if(!u)return;$('photoview').innerHTML='<div class="photosheet" id="pvsh"><div class="box" style="text-align:center"><img src="'+u+'" alt="Foto del ticket" style="max-width:100%;max-height:70vh;border-radius:12px"><div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button type="button" class="btn" id="pv_dl">⬇️ Descargar</button><button type="button" class="btn ghost" id="pv_cn">Cerrar</button></div></div></div>';$('pv_cn').onclick=closePhoto;$('pv_dl').onclick=function(){downloadPhoto(u,d)};$('pvsh').onclick=function(e){if(e.target===$('pvsh'))closePhoto()}}
+function viewPhoto(id){var t=S.tx.filter(function(x){return x.id===id})[0];if(!t||!t.photo)return;viewPhotoData(t.photo,t.date)}
 function closePhoto(){$('photoview').innerHTML=''}
+/* Descargar la foto del ticket que se está viendo en grande. Nombre
+   ticket-AAAA-MM-DD.jpg con la fecha del movimiento (o la de hoy si no la
+   hay); la extensión sigue el tipo de la imagen (jpg/png/gif/webp).
+   En la app (Capacitor) se guarda directo en Descargas/Control de Finanzas
+   con el plugin BackupDownload (la foto va en base64 + su MIME). Si la
+   descarga directa falla o el plugin no está, se abre el menú de compartir
+   del sistema con la foto como archivo (Web Share con File); el plugin Share
+   de Capacitor no acepta imágenes en base64, solo URLs de archivo, así que
+   no sirve aquí. En el navegador se descarga el archivo directo. */
+function photoExt(u){var m=/^data:(image\/[a-zA-Z0-9.+-]+);base64,/.exec(u||'');if(!m)return 'jpg';var t=m[1].toLowerCase();if(t==='image/png')return 'png';if(t==='image/gif')return 'gif';if(t==='image/webp')return 'webp';return 'jpg'}
+function photoFileName(u,d){var ds=/^\d{4}-\d{2}-\d{2}/.test(d||'')?d.slice(0,10):today();return 'ticket-'+ds+'.'+photoExt(u)}
+function photoMime(u){return (/^data:([^;,]+)/.exec(u||'')||[])[1]||'image/jpeg'}
+function dataUrlToBlob(u){var i=(u||'').indexOf(',');var b64=i>=0?u.slice(i+1):'';var bin=atob(b64);var arr=new Uint8Array(bin.length);for(var k=0;k<bin.length;k++)arr[k]=bin.charCodeAt(k);return new Blob([arr],{type:photoMime(u)})}
+function downloadPhoto(u,d){
+ if(!u)return;
+ var name=photoFileName(u,d);
+ if(window.Capacitor){
+  if(hasCapBackupDownload()){
+   try{
+    var b64=u.indexOf(',')>=0?u.slice(u.indexOf(',')+1):u;
+    var p=window.Capacitor.Plugins.BackupDownload.save({filename:name,data:b64,base64:true,mime:photoMime(u),folder:APP_FOLDER});
+    if(p&&p.then){p.then(function(res){say('Foto guardada en Descargas/Control de Finanzas'+(res&&res.name?' como '+res.name:' como '+name))},function(){sharePhoto(u,name)});return}
+   }catch(e){}
+  }
+  sharePhoto(u,name);return;
+ }
+ try{
+  var blob=dataUrlToBlob(u),url=null;
+  try{url=URL.createObjectURL(blob)}catch(e){url=u}
+  var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){try{URL.revokeObjectURL(url)}catch(e){}a.remove()},200);
+  say('Foto descargada');
+ }catch(e){say('No se pudo descargar la foto')}
+}
+function sharePhoto(u,name){
+ try{
+  if(navigator.share&&navigator.canShare){
+   var f=new File([dataUrlToBlob(u)],name,{type:photoMime(u)});
+   if(navigator.canShare({files:[f]})){
+    var q=navigator.share({title:'Foto del ticket',files:[f]});
+    if(q&&q.then){q.then(function(){say('Elige dónde guardar tu foto')},function(){say('No se pudo guardar la foto')})}else say('Elige dónde guardar tu foto');
+    return;
+   }
+  }
+ }catch(e){}
+ say('No se pudo guardar la foto');
+}
 
 function say(m){var d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;left:16px;right:16px;bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;z-index:20;text-align:center';document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
 window.addEventListener('error',function(e){say('Error: '+(e.message||'desconocido'))});
@@ -544,20 +592,26 @@ function warnOverAvail(amt,a,verb,onYes,onNo){var av=availOf(a);
 var TA='width:100%;margin-top:10px;font:12px monospace;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)';
 function hasCapShare(){try{var C=window.Capacitor;return !!(C&&C.Plugins&&C.Plugins.Share&&C.Plugins.Share.share)}catch(e){return false}}
 var BACKUP_FILE='respaldo-finanzas.txt';
+/* Carpeta exclusiva de la app dentro de Descargas: ahí van el respaldo y las
+   fotos de tickets que se descargan, para no saturar Descargas con archivos
+   sueltos. La crea el plugin BackupDownload (MediaStore en Android 10+,
+   mkdirs() en Android 9 o menor). */
+var APP_FOLDER='Control de Finanzas';
 function downloadBackup(txt){try{var url=null;try{var blob=new Blob([txt],{type:'text/plain'});url=URL.createObjectURL(blob)}catch(e){url='data:text/plain;charset=utf-8,'+encodeURIComponent(txt)}var a=document.createElement('a');a.href=url;a.download=BACKUP_FILE;document.body.appendChild(a);a.click();setTimeout(function(){try{URL.revokeObjectURL(url)}catch(e){}a.remove()},200);return true}catch(e){return false}}
 /* El respaldo es un .txt (mismo JSON por dentro) para abrirlo con cualquier app de texto.
    En la app (Capacitor) el WebView no descarga enlaces <a download>: el archivo se
-   guarda directo en Descargas con el plugin local BackupDownload (MediaStore en
-   Android 10+, sin permisos). @capacitor/filesystem no sirve aquí: no tiene carpeta
-   de Descargas y sus carpetas públicas están bloqueadas por el scoped storage en
-   Android 11+. Si la descarga directa falla, se cae al menú de compartir de Android;
+   guarda directo en Descargas, dentro de la carpeta "Control de Finanzas", con el
+   plugin local BackupDownload (MediaStore en Android 10+, sin permisos).
+   @capacitor/filesystem no sirve aquí: no tiene carpeta de Descargas y sus
+   carpetas públicas están bloqueadas por el scoped storage en Android 11+.
+   Si la descarga directa falla, se cae al menú de compartir de Android;
    en el navegador se descarga el archivo. */
 function hasCapBackupDownload(){try{var C=window.Capacitor;return !!(C&&C.Plugins&&C.Plugins.BackupDownload&&C.Plugins.BackupDownload.save)}catch(e){return false}}
 function exportBackup(txt){
  if(hasCapBackupDownload()){
   try{
-   var p=window.Capacitor.Plugins.BackupDownload.save({filename:BACKUP_FILE,data:txt});
-   if(p&&p.then){p.then(function(res){say('Respaldo guardado en Descargas'+(res&&res.name?' como '+res.name:' como '+BACKUP_FILE))},function(){shareBackup(txt)});return}
+   var p=window.Capacitor.Plugins.BackupDownload.save({filename:BACKUP_FILE,data:txt,folder:APP_FOLDER});
+   if(p&&p.then){p.then(function(res){say('Respaldo guardado en Descargas/Control de Finanzas'+(res&&res.name?' como '+res.name:' como '+BACKUP_FILE))},function(){shareBackup(txt)});return}
   }catch(e){}
  }
  shareBackup(txt)}

@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Base64;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -18,12 +19,20 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Guarda un archivo de texto directo en la carpeta pública de Descargas.
+ * Guarda un archivo directo en la carpeta pública de Descargas, dentro de una
+ * subcarpeta exclusiva de la app ("Control de Finanzas") para no saturar
+ * Descargas con los archivos sueltos.
  *
- * En Android 10+ usa MediaStore (MediaStore.Downloads): no pide ningún permiso
- * y el archivo aparece en Descargas con el nombre pedido. En Android 9 o menor
- * escribe directo en la carpeta pública de Descargas (necesita el permiso
- * WRITE_EXTERNAL_STORAGE, declarado en el AndroidManifest del plugin).
+ * Sirve para el respaldo (.txt, texto) y para las fotos de los tickets
+ * (imagen JPEG/PNG en base64): el llamador pasa el tipo MIME y si el
+ * contenido viene en base64.
+ *
+ * En Android 10+ usa MediaStore (MediaStore.Downloads) con RELATIVE_PATH
+ * "Download/Control de Finanzas/": no pide ningún permiso y el archivo
+ * aparece ahí con el nombre pedido. En Android 9 o menor crea la subcarpeta
+ * con mkdirs() dentro de la carpeta pública de Descargas (necesita el
+ * permiso WRITE_EXTERNAL_STORAGE, declarado en el AndroidManifest del
+ * plugin).
  *
  * Si algo falla, el método rechaza la promesa y la app cae de vuelta al menú
  * de compartir; nunca se dice que se guardó cuando no se guardó.
@@ -36,18 +45,34 @@ public class BackupDownloadPlugin extends Plugin {
         String filename = call.getString("filename", "respaldo-finanzas.txt");
         String data = call.getString("data");
         if (data == null) {
-            call.reject("Falta el contenido del respaldo");
+            call.reject("Falta el contenido del archivo");
+            return;
+        }
+        String mime = call.getString("mime", "text/plain");
+        if (mime == null || mime.isEmpty()) {
+            mime = "text/plain";
+        }
+        boolean base64 = Boolean.TRUE.equals(call.getBoolean("base64", false));
+        String folder = sanitizeFolder(call.getString("folder", ""));
+        byte[] bytes;
+        try {
+            bytes =
+                base64
+                    ? Base64.decode(data, Base64.DEFAULT)
+                    : data.getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            call.reject("No se pudo leer el contenido del archivo");
             return;
         }
         try {
             String savedName;
             String uri;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Uri u = saveWithMediaStore(filename, data);
+                Uri u = saveWithMediaStore(filename, bytes, mime, folder);
                 uri = u.toString();
                 savedName = queryDisplayName(u, filename);
             } else {
-                File f = saveWithFileApi(filename, data);
+                File f = saveWithFileApi(filename, bytes, folder);
                 uri = Uri.fromFile(f).toString();
                 savedName = f.getName();
             }
@@ -60,12 +85,37 @@ public class BackupDownloadPlugin extends Plugin {
         }
     }
 
-    private Uri saveWithMediaStore(String filename, String data) throws Exception {
+    /** La carpeta es una ruta relativa dentro de Descargas, sin ".." ni barras de más. */
+    private String sanitizeFolder(String folder) {
+        if (folder == null) {
+            return "";
+        }
+        String[] parts = folder.trim().split("/");
+        StringBuilder out = new StringBuilder();
+        for (String p : parts) {
+            String s = p.trim();
+            if (s.isEmpty() || s.equals(".") || s.equals("..")) {
+                continue;
+            }
+            if (out.length() > 0) {
+                out.append('/');
+            }
+            out.append(s);
+        }
+        return out.toString();
+    }
+
+    private Uri saveWithMediaStore(String filename, byte[] bytes, String mime, String folder)
+        throws Exception {
         ContentResolver resolver = getContext().getContentResolver();
         ContentValues values = new ContentValues();
         values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
-        values.put(MediaStore.Downloads.MIME_TYPE, "text/plain");
-        values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+        values.put(MediaStore.Downloads.MIME_TYPE, mime);
+        String path = Environment.DIRECTORY_DOWNLOADS;
+        if (!folder.isEmpty()) {
+            path += "/" + folder;
+        }
+        values.put(MediaStore.Downloads.RELATIVE_PATH, path);
         Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
         if (uri == null) {
             throw new Exception("MediaStore no devolvió una ubicación");
@@ -76,7 +126,7 @@ public class BackupDownloadPlugin extends Plugin {
                 throw new Exception("No se pudo abrir el archivo en Descargas");
             }
             try {
-                os.write(data.getBytes(StandardCharsets.UTF_8));
+                os.write(bytes);
             } finally {
                 os.close();
             }
@@ -112,10 +162,13 @@ public class BackupDownloadPlugin extends Plugin {
         return fallback;
     }
 
-    private File saveWithFileApi(String filename, String data) throws Exception {
+    private File saveWithFileApi(String filename, byte[] bytes, String folder) throws Exception {
         File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         if (dir == null) {
             throw new Exception("No hay carpeta de Descargas");
+        }
+        if (!folder.isEmpty()) {
+            dir = new File(dir, folder);
         }
         if (!dir.exists() && !dir.mkdirs()) {
             throw new Exception("No se pudo crear la carpeta de Descargas");
@@ -123,7 +176,7 @@ public class BackupDownloadPlugin extends Plugin {
         File file = new File(dir, filename);
         FileOutputStream fos = new FileOutputStream(file, false);
         try {
-            fos.write(data.getBytes(StandardCharsets.UTF_8));
+            fos.write(bytes);
         } finally {
             fos.close();
         }
