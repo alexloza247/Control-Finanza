@@ -109,6 +109,20 @@ input,select{width:100%;font:inherit;padding:11px;border-radius:10px;border:1px 
 .cleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
 a.lnk{color:var(--g);font-weight:600;background:none;border:0;font:inherit;padding:0}
 .ed{color:var(--mute2);font-size:15px;flex:none;margin-left:8px}
+/* Animaciones (sutiles, 150-300 ms): las tarjetas aparecen con un
+   desvanecido, los botones reaccionan al tocarlos, al cambiar de pestaña
+   la vista se desliza, y los saldos y totales cuentan hasta su valor nuevo.
+   Solo transform/opacity, para que la app siga fluida en el teléfono. */
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideFromR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideFromL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+#app.tab-enter .item,#app.tab-enter .total{animation:fadeSlide .22s ease-out both}
+#app.slide-l{animation:slideFromR .25s ease-out}
+#app.slide-r{animation:slideFromL .25s ease-out}
+button,.cd{transition:transform .12s ease,opacity .12s ease}
+button:active,.cd:active{transform:scale(.96);opacity:.85}
+*{-webkit-tap-highlight-color:transparent}
+@media (prefers-reduced-motion:reduce){#app.tab-enter .item,#app.tab-enter .total,#app.slide-l,#app.slide-r{animation:none}button,.cd{transition:none}}
 </style>
 </head>
 <body>
@@ -173,13 +187,34 @@ function dueLabel(days){return days===0?'vence hoy':days===1?'vence mañana':'ve
 
 function render(){
  applyTheme();
+ var tabChanged=(tab!==lastRenderedTab);lastRenderedTab=tab;
  var h='';
  if(tab==='home')h=home();else if(tab==='tx')h=txs();else if(tab==='cal')h=cal();else if(tab==='cfg')h=settingsHtml();else h=accs();
  $('app').innerHTML=h;
+ if(tabChanged){var ap=$('app');ap.classList.add('tab-enter');setTimeout(function(){ap.classList.remove('tab-enter')},350)}
  var gearSvg='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
  $('nav').innerHTML=[['home','Resumen'],['tx','Movimientos'],['cal','Calendario'],['acc','Cuentas'],['cfg',gearSvg,'Configuración']].map(function(t){return '<button data-t="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"'+(t[2]?' aria-label="'+t[2]+'" title="'+t[2]+'"':'')+'>'+t[1]+'</button>'}).join('');
  $('fab').style.display=S.accounts.length?'block':'none';
- if(tab==='cfg')wireSettings();if(tab==='tx')wireTx();checkReminder();
+ if(tab==='cfg')wireSettings();if(tab==='tx')wireTx();checkReminder();animNums();
+}
+/* Cambio de pestaña con deslizamiento: la vista nueva entra desde la
+   derecha si se avanza (dir>0) o desde la izquierda si se retrocede
+   (dir<0), en el orden Resumen, Movimientos, Calendario, Cuentas,
+   Configuración. Sin movimiento (prefers-reduced-motion) cambia directo. */
+var TABS=['home','tx','cal','acc','cfg'],lastRenderedTab=null;
+var REDUCED=false;try{REDUCED=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(e){}
+function goTab(t,dir){var i=TABS.indexOf(t),j=TABS.indexOf(tab);if(i<0||t===tab)return;if(!dir)dir=i>j?1:-1;tab=t;var app=$('app');if(app&&dir&&!REDUCED){app.classList.remove('slide-l','slide-r');void app.offsetWidth;app.classList.add(dir>0?'slide-l':'slide-r');setTimeout(function(){app.classList.remove('slide-l','slide-r')},300)}render();window.scrollTo(0,0)}
+/* Números que suben/bajan animados: saldos y totales cuentan hasta el valor
+   nuevo en ~280 ms en vez de saltar. El valor anterior se guarda por clave
+   (data-k) entre renders; la primera vez cuentan desde 0. Los elementos con
+   clase .anum llevan el valor numérico en data-v. */
+var prevNums={};
+function animNums(){
+ var els=document.querySelectorAll('.anum'),now=performance.now();
+ for(var i=0;i<els.length;i++){var el=els[i],k=el.getAttribute('data-k'),to=parseFloat(el.getAttribute('data-v'))||0;
+  var from=(k in prevNums)?prevNums[k]:0;prevNums[k]=to;
+  if(REDUCED||from===to){el.textContent=money(to);continue}
+  (function(el,from,to,start){var raf=function(t){var p=Math.min(1,(t-start)/280),e=1-Math.pow(1-p,3),v=from+(to-from)*e;el.textContent=money(v);if(p<1)requestAnimationFrame(raf)};requestAnimationFrame(raf)})(el,from,to,now)}
 }
 /* "Puedes gastar": lo que queda de verdad en efectivo y débito después de
    restar los pagos próximos que vencen este mes y la mensualidad MSI de este
@@ -190,7 +225,7 @@ function home(){
  var avail=0,debt=0;S.accounts.forEach(function(a){var b=balance(a);if(a.type==='credit')debt+=Math.max(0,-b)-Math.min(0,-b)*0;else avail+=b});
  var m=monthKeyOf(new Date()),inc=0,exp=0;
  S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});
- var free=freeMoney(),h='<h1>Dinero disponible</h1><div class="total"><div class="n">'+money(avail)+'</div><div class="s">Deuda en tarjetas: '+money(debt)+'</div><div class="row" style="margin-top:14px"><div><div class="s">Ingresos del mes</div><b>'+money(inc)+'</b></div><div style="text-align:right"><div class="s">Gastos del mes</div><b>'+money(exp)+'</b></div></div><div class="s" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">Puedes gastar: <b>'+money(free)+'</b></div></div>';
+ var free=freeMoney(),h='<h1>Dinero disponible</h1><div class="total"><div class="n"><span class="anum" data-k="avail" data-v="'+avail+'">'+money(avail)+'</span></div><div class="s">Deuda en tarjetas: <span class="anum" data-k="debt" data-v="'+debt+'">'+money(debt)+'</span></div><div class="row" style="margin-top:14px"><div><div class="s">Ingresos del mes</div><b><span class="anum" data-k="minc" data-v="'+inc+'">'+money(inc)+'</span></b></div><div style="text-align:right"><div class="s">Gastos del mes</div><b><span class="anum" data-k="mexp" data-v="'+exp+'">'+money(exp)+'</span></b></div></div><div class="s" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">Puedes gastar: <b><span class="anum" data-k="free" data-v="'+free+'">'+money(free)+'</span></b></div></div>';
  h+=presetsHtml();h+=billsHtml();h+=chartsHtml();
  h+='<button class="btn ghost" data-act="sharereport" style="margin-top:4px">📊 Compartir reporte del mes</button>';
  var al=S.accounts.filter(function(a){return a.type==='credit'&&a.dueDay&&balance(a)<0}).map(function(a){return {a:a,d:nextDueCard(a)}}).sort(function(x,y){return x.d.days-y.d.days});
@@ -311,14 +346,14 @@ var txQ='',txType='all';
    movimientos ya vienen ordenados por fecha y hora descendente. */
 function dayLabel(d){var p=(d||'').split('-');if(p.length<3)return '';var m=MESES[+p[1]-1];if(!m||!p[0]||!p[2])return '';return (+p[2])+' de '+m.charAt(0).toUpperCase()+m.slice(1)+' '+p[0]}
 function daysHtml(arr){var out='',cur='';arr.forEach(function(t){var d=t.date||'';if(d!==cur){cur=d;var lbl=dayLabel(d);if(lbl)out+='<div class="daysep">'+lbl+'</div>'}out+=list([t])});return out}
-function txs(){var h='<h1>Movimientos</h1>';if(!S.tx.length)return h+'<div class="empty">Aún no hay movimientos. Toca + para agregar uno.</div>';h+='<input id="tx_q" type="search" placeholder="Buscar por nota, categoría, cuenta, monto o fecha…" value="'+esc(txQ)+'" style="margin-top:8px"><div class="seg" style="margin-top:8px" id="tx_f">'+[['all','Todos'],['income','Ingresos'],['expense','Gastos'],['transfer','Transferencias']].map(function(k){return '<button type="button" data-k="'+k[0]+'" class="'+(txType===k[0]?'on':'')+'">'+k[1]+'</button>'}).join('')+'</div>';var arr=S.tx.slice().sort(cmp).filter(function(t){if(txType!=='all'&&t.type!==txType)return false;if(!txQ)return true;var q=txQ.toLowerCase(),a=acc(t.acc);if(((t.note||'')+' '+(t.cat||'')+' '+(a?a.name:'')).toLowerCase().indexOf(q)>=0)return true;return amtSearchMatch(q,t.amt)||dateSearchMatch(q,t.date)});if(!arr.length)return h+'<div class="empty">Sin movimientos que coincidan con la búsqueda.</div>';var g={},ks=[];arr.forEach(function(t){var k=(t.date||'').slice(0,7);if(!g[k]){g[k]=[];ks.push(k)}g[k].push(t)});ks.forEach(function(k){var i=0,e=0;g[k].forEach(function(t){if(t.type==='income')i+=t.amt;if(t.type==='expense')e+=t.amt});var p=k.split('-');h+='<h2 style="text-transform:capitalize">'+MESES[+p[1]-1]+' '+p[0]+'</h2><div class="m" style="margin-bottom:8px">Ingresos <b class="pos">'+money(i)+'</b> · Gastos <b class="neg">'+money(e)+'</b></div>'+daysHtml(g[k])});return h}
+function txs(){var h='<h1>Movimientos</h1>';if(!S.tx.length)return h+'<div class="empty">Aún no hay movimientos. Toca + para agregar uno.</div>';h+='<input id="tx_q" type="search" placeholder="Buscar por nota, categoría, cuenta, monto o fecha…" value="'+esc(txQ)+'" style="margin-top:8px"><div class="seg" style="margin-top:8px" id="tx_f">'+[['all','Todos'],['income','Ingresos'],['expense','Gastos'],['transfer','Transferencias']].map(function(k){return '<button type="button" data-k="'+k[0]+'" class="'+(txType===k[0]?'on':'')+'">'+k[1]+'</button>'}).join('')+'</div>';var arr=S.tx.slice().sort(cmp).filter(function(t){if(txType!=='all'&&t.type!==txType)return false;if(!txQ)return true;var q=txQ.toLowerCase(),a=acc(t.acc);if(((t.note||'')+' '+(t.cat||'')+' '+(a?a.name:'')).toLowerCase().indexOf(q)>=0)return true;return amtSearchMatch(q,t.amt)||dateSearchMatch(q,t.date)});if(!arr.length)return h+'<div class="empty">Sin movimientos que coincidan con la búsqueda.</div>';var g={},ks=[];arr.forEach(function(t){var k=(t.date||'').slice(0,7);if(!g[k]){g[k]=[];ks.push(k)}g[k].push(t)});ks.forEach(function(k){var i=0,e=0;g[k].forEach(function(t){if(t.type==='income')i+=t.amt;if(t.type==='expense')e+=t.amt});var p=k.split('-');h+='<h2 style="text-transform:capitalize">'+MESES[+p[1]-1]+' '+p[0]+'</h2><div class="m" style="margin-bottom:8px">Ingresos <b class="pos"><span class="anum" data-k="txmi-'+k+'" data-v="'+i+'">'+money(i)+'</span></b> · Gastos <b class="neg"><span class="anum" data-k="txme-'+k+'" data-v="'+e+'">'+money(e)+'</span></b></div>'+daysHtml(g[k])});return h}
 function wireTx(){var q=$('tx_q');if(q){q.oninput=function(){txQ=q.value;render()};if(txQ){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}var f=$('tx_f');if(f)f.onclick=function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(!k)return;txType=k;render()}}
 function txsOld(){return '<h1>Movimientos</h1>'+(S.tx.length?'<div style="margin-top:12px">'+list(S.tx.slice().sort(cmp))+'</div>':'<div class="empty">Aún no hay movimientos. Toca + para agregar uno.</div>')}
 function accs(){
  var h='<div class="row"><h1>Cuentas</h1><a class="lnk" data-act="newacc">+ Nueva</a></div><div style="margin-top:12px">';
  if(!S.accounts.length)h+='<div class="empty">Agrega efectivo, débito o crédito.</div>';
  var lastT='';sortedAccs().forEach(function(a){var b=balance(a);if(a.type!==lastT){lastT=a.type;h+='<div class="m" style="margin:14px 0 6px;font-weight:600">'+TYPES[a.type]+'</div>'}
-  h+='<div class="item" data-act="accmove" data-id="'+a.id+'"><div class="row"><div><div class="t">'+esc(a.name)+'</div><div class="m">'+TYPES[a.type]+(a.type==='credit'&&a.freq==='biweekly'?' quincenal':'')+(a.type==='credit'&&a.cutDay?' · corte día '+cutDays(a).join(' y '):'')+(a.type==='credit'&&a.dueDay?' · pago día '+dueDays(a).join(' y '):'')+'</div></div><b class="'+(b<0?'neg':'')+'">'+(a.type==='credit'?money(-b):money(b))+'</b></div>';
+  h+='<div class="item" data-act="accmove" data-id="'+a.id+'"><div class="row"><div><div class="t">'+esc(a.name)+'</div><div class="m">'+TYPES[a.type]+(a.type==='credit'&&a.freq==='biweekly'?' quincenal':'')+(a.type==='credit'&&a.cutDay?' · corte día '+cutDays(a).join(' y '):'')+(a.type==='credit'&&a.dueDay?' · pago día '+dueDays(a).join(' y '):'')+'</div></div><b class="'+(b<0?'neg':'')+'"><span class="anum" data-k="acc-'+a.id+'" data-v="'+(a.type==='credit'?-b:b)+'">'+(a.type==='credit'?money(-b):money(b))+'</span></b></div>';
   if(a.type==='credit'&&+a.limit>0){var used=Math.max(0,-b),p=Math.min(100,used/a.limit*100);h+='<div class="bar"><i class="'+(p>80?'hi':'')+'" style="width:'+p+'%"></i></div><div class="m" style="margin-top:4px">Límite de '+money(a.limit)+' · disponible '+money(a.limit-used)+'</div>'}
   if(a.type==='credit'){var ps=msiPlans(a);if(ps.length){h+='<div class="m" style="margin-top:10px"><b>Meses sin intereses · '+money(msiMonth(a))+' al mes</b></div>';ps.forEach(function(p){h+='<div class="m">'+esc(p.t.note||p.t.cat||'Compra')+' · '+p.done+'/'+p.t.msi+' pagos · faltan '+p.left+' · '+money(p.m)+'/mes</div>'})}}
   if(a.type==='credit'&&dueDays(a).length)h+='<div style="margin-top:6px">'+dueDays(a).map(function(dd){return calLink('Pago tarjeta '+a.name,fmt(nextDue(dd).date),dd,true,'Fecha límite de pago de '+a.name,dueDays(a).length>1?'Calendario · día '+dd:'')}).join(' ')+'</div>';
@@ -784,7 +819,7 @@ document.addEventListener('click',function(e){
  var el=e.target.closest('[data-act],[data-t]');
  if(e.target.id==='sh'){close();return}
  if(!el)return;
- if(el.getAttribute('data-t')){tab=el.getAttribute('data-t');render();window.scrollTo(0,0);return}
+ if(el.getAttribute('data-t')){goTab(el.getAttribute('data-t'));return}
  var act=el.getAttribute('data-act'),id=el.getAttribute('data-id');
  if(act==='newacc')accForm();
  else if(act==='accmove')txForm(null,{acc:id})
@@ -816,6 +851,37 @@ document.addEventListener('click',function(e){
  else if(act==='sharereport')shareReport()
  else if(act==='import')restoreForm();
 });
+/* Swipe para cambiar de pestaña: deslizar a la izquierda avanza a la
+   siguiente pestaña y a la derecha retrocede, en el orden de las pestañas
+   (el deslizamiento va en el mismo sentido que la animación de cambio de
+   pestaña). Umbral de 60 px y claramente horizontal (|dx| > |dy|), así un
+   toque normal o el desplazamiento vertical nunca cambian de pestaña. No
+   se bloquea ningún gesto (no hay preventDefault) y se ignora si hay un
+   modal abierto, si el toque empieza en un campo de texto o si empieza
+   dentro de algo con desplazamiento horizontal (gráficas, tablas, listas). */
+var swX=0,swY=0,swOk=false;
+function swipeStart(e){
+ swOk=false;
+ if(modalOpen()||calcOpen()||photoViewOpen())return;
+ var t=e.changedTouches&&e.changedTouches[0];if(!t||(e.touches&&e.touches.length>1))return;
+ var el=t.target;if(!el||!el.closest)return;
+ if(!el.closest('#app'))return;
+ if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'||el.tagName==='SELECT')return;
+ var n=el;
+ while(n&&n!==document.body){if(n.scrollWidth>n.clientWidth+2){var ox='';try{ox=window.getComputedStyle(n).overflowX||''}catch(err){}if(/auto|scroll/.test(ox))return}n=n.parentNode}
+ swX=t.clientX;swY=t.clientY;swOk=true;
+}
+function swipeEnd(e){
+ if(!swOk)return;swOk=false;
+ var t=e.changedTouches&&e.changedTouches[0];if(!t)return;
+ var dx=t.clientX-swX,dy=t.clientY-swY;
+ if(Math.abs(dx)<60||Math.abs(dx)<=Math.abs(dy))return;
+ var i=TABS.indexOf(tab),ni=dx<0?i+1:i-1;
+ if(ni<0||ni>=TABS.length)return;
+ goTab(TABS[ni],dx<0?1:-1);
+}
+document.addEventListener('touchstart',swipeStart,{passive:true});
+document.addEventListener('touchend',swipeEnd,{passive:true});
 $('fab').onclick=function(){open('<h2 style="margin-top:0">Agregar</h2><button class="btn" id="fb_tx">Nuevo movimiento</button><button class="btn ghost" id="fb_bill" style="margin-top:10px">Nuevo pago próximo</button><button class="btn ghost" id="cn" style="margin-top:10px">Cancelar</button>');$('fb_tx').onclick=function(){txForm()};$('fb_bill').onclick=function(){billForm()};$('cn').onclick=close};setTimeout(initCloud,0);settingsDef();applyTheme();try{var mm=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');if(mm&&mm.addEventListener)mm.addEventListener('change',function(){if(settingsDef().mode==='auto')applyTheme()})}catch(e){}scheduleLocalReminder();scheduleBillReminders();registerLocalNotificationTap();registerBackButton();registerWidgetLinks();setInterval(checkReminder,60000);
 render();syncWidgetSnapshot();
 })();

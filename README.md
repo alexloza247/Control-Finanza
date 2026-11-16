@@ -80,8 +80,13 @@ Así se ve la app (con datos de ejemplo):
 ### Navegación
 
 - La barra de navegación está fija en la parte de **arriba**, con Resumen, Movimientos, Calendario, Cuentas y el engranaje de Configuración.
+- También se puede cambiar de pestaña **deslizando el dedo** a la izquierda o a la derecha sobre el contenido, en el orden de las pestañas; el deslizamiento va en el mismo sentido que la animación del cambio. Necesita un deslizamiento claro (más de 60 px y más horizontal que vertical), así un toque normal o el desplazamiento de la página no cambian de pestaña, y no interfiere con el desplazamiento dentro de las gráficas, tablas o listas.
 - En Configuración puedes elegir el **color de la barra de navegación** (cuarto color del tema), distinto al fondo para que no se pierda; el texto se adapta (blanco u oscuro) según el color que elijas.
 - El botón de **regresar** del celular cierra primero el modal que tengas abierto; solo si no hay ningún modal abierto sale de la app.
+
+### Animaciones
+
+- Las tarjetas aparecen con un desvanecido suave al cambiar de pestaña; los botones reaccionan al tocarlos (se hunden un poco); al cambiar de pestaña la vista se desliza en el sentido del cambio; y los saldos y totales cuentan hasta su valor nuevo en vez de saltar. Son animaciones cortas (150–300 ms) para que la app siga rápida, y se desactivan solas si el teléfono tiene activado "Reducir movimiento".
 
 ### Pagos próximos
 
