@@ -48,6 +48,7 @@ Así se ve la app (con datos de ejemplo):
 - Nota, fecha y hora (formato 24 h) y monto con formato de moneda. Al crear un movimiento la hora se prellena con la hora actual y se puede cambiar; al editarlo se muestra su hora guardada. La hora se muestra en la lista junto a la fecha ("· 15:30"); los movimientos viejos sin hora se muestran igual que antes.
 - El campo Monto tiene un botón con un ícono minimalista de calculadora que abre una calculadora (suma, resta, multiplicación y división, con precedencia estándar: primero × ÷, luego + −); el botón **Insertar** pone el resultado, redondeado a centavos, en el campo Monto. Si se cierra sin insertar, el Monto queda como estaba. Si el Monto ya tenía un número, la calculadora arranca con ese valor.
 - Los movimientos se ordenan por fecha descendente y, dentro del mismo día, por hora descendente (el más reciente arriba); los movimientos sin hora van después de los que tienen hora ese día.
+- Filtro por cuenta: un selector debajo de los filtros de tipo permite ver solo los movimientos de una cuenta (por ejemplo solo la Nu) o todas; convive con la búsqueda (por monto/fecha) y con los separadores por día, y los totales mensuales de la lista se calculan sobre lo filtrado. Una transferencia aparece al filtrar por cualquiera de sus dos cuentas (origen o destino).
 - Editar y eliminar movimientos.
 - Cada movimiento muestra un ícono de lápiz (✎) para que se vea que se puede editar.
 - Buscador por nota, categoría, cuenta, monto y fecha ("500" encuentra el gasto de $500; "13/11", "13 nov" o "2026-11-13" encuentran los movimientos de ese día), y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
@@ -96,6 +97,7 @@ Así se ve la app (con datos de ejemplo):
 - El botón **+** (abajo a la derecha) te deja elegir entre "Nuevo movimiento" y "Nuevo pago próximo"; también se puede crear un pago próximo desde **Calendario**, con el botón "+ Pago próximo" (usa el día seleccionado, o el de hoy).
 - El botón para pagar un pago próximo dice "Revisar y pagar", porque primero se revisa el movimiento y luego se confirma con Guardar.
 - Se repiten una vez, cada semana, cada quincena, cada mes o con una frecuencia personalizada (cada N días, por ejemplo cada 10 días); al pagarlos se registra el movimiento y la fecha avanza según la frecuencia elegida, las veces que haga falta hasta quedar en el futuro: un pago muy vencido no vuelve a quedar vencido. La quincena avanza 15 días, igual que en las tarjetas de crédito.
+- Fin opcional ("stop"): al crear o editar un pago con repetición se puede elegir un fin: **Hasta X veces** (se repite N veces y se detiene) o **Hasta una fecha** (se repite hasta esa fecha). Al llegar al fin, el pago deja de avanzar y de avisar, pero **no se borra**: queda en la lista como **Finalizado** y se puede editar para quitarle o cambiarle el fin. La lista muestra el fin ("quedan 3 veces", "hasta 31 dic 2026"); los pagos sin fin se repiten como antes, sin límite.
 - El botón de calendario (icono) en cada pago próximo crea el evento en Google Calendar con la repetición correspondiente (semanal, cada 15 días, mensual o cada N días).
 - En el Resumen se muestran ordenados por fecha, con avisos cuando faltan 3 días o menos.
 
@@ -113,7 +115,9 @@ Así se ve la app (con datos de ejemplo):
 ### Calendario
 
 - Calendario mensual con navegación por mes y selección de día.
+- Debajo del mes se muestran los totales de ese mes (ingresos, gastos y balance), como en Resumen; al navegar a otro mes con las flechas cambian a los de ese mes.
 - Marcas por día: pago límite de tarjeta, fecha de corte, pago próximo y movimientos del día.
+- La leyenda de los puntitos está en una cuadrícula ordenada de 2×2, con cada símbolo junto a su etiqueta, para que nada se corte.
 - Detalle del día seleccionado con sus eventos y movimientos, ingresos y gastos de ese día.
 - Botón de calendario (icono) en pagos de tarjeta y pagos próximos: abre el evento en Google Calendar, con repetición mensual cuando aplica.
 
@@ -155,7 +159,7 @@ Así se ve la app (con datos de ejemplo):
 ### Respaldo y datos
 
 - En la pestaña **Configuración**, sección **Respaldo**: el respaldo es **solo por archivo** — ya no hay opción de copiar ni de pegar el texto, porque a veces se copiaba incompleto y el respaldo quedaba corrupto. El botón **Descargar respaldo** guarda el archivo `respaldo-finanzas-AAAA-MM-DD.txt` (con la fecha del día en que se hizo) directo en la carpeta Descargas/Control de Finanzas del teléfono **en la app** (lo hace el plugin local `plugins/backup-download`, con MediaStore en Android 10+; `@capacitor/filesystem` no sirve para esto porque no tiene carpeta de Descargas y sus carpetas públicas están bloqueadas por el almacenamiento con alcance en Android 11+). Si la descarga directa falla, la app cae de vuelta al menú de compartir de Android (Drive, Archivos, Keep, etc.) y avisa; **en el navegador** el botón **Descargar archivo** lo descarga con el mismo nombre con fecha; y **Restaurar respaldo** solo deja elegir el archivo `.txt` o `.json` (los respaldos viejos `.json` siguen funcionando) para recuperar tus datos; reemplaza los datos actuales. Las fotos de los tickets viajan dentro del respaldo, así que con muchas fotos el respaldo pesa más. Antes de reemplazar nada, la app valida la estructura del respaldo (cuentas y movimientos deben ser listas, y pagos próximos, atajos, categorías y ajustes con su tipo correcto); si el archivo no es válido, la app avisa y no cambia nada.
-- **Historial de ajustes:** en Configuración > Datos, la sección **Historial de ajustes** muestra cada cambio hecho en "Confirma tus saldos" (cuenta, valor anterior → valor nuevo, fecha y hora), del más reciente al más viejo. Los ajustes viejos (anteriores a esta función) no aparecen: el historial empieza a partir de ahora. Si confirmar saldos no cambia nada, no se registra nada. El historial se incluye en el respaldo y se recupera al restaurar.
+- **Historial de ajustes:** en Configuración > Datos, la sección **Historial de ajustes** muestra por defecto solo los ajustes de los últimos 2 días (hoy y ayer: cuenta, valor anterior → valor nuevo, fecha y hora), del más reciente al más viejo; si hay ajustes más viejos, el botón **Ver más** abre una mini ventana aparte con TODOS los ajustes. Los ajustes viejos (anteriores a esta función) no aparecen: el historial empieza a partir de ahora. Si confirmar saldos no cambia nada, no se registra nada. El historial se incluye en el respaldo y se recupera al restaurar.
 - Los datos se guardan solo en este dispositivo, en el almacenamiento local del navegador (`localStorage`, clave `misfinanzas_v1`), y no se sincronizan con otros dispositivos ni con servidores.
 
 ## Cómo usarla
