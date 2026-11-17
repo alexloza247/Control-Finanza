@@ -54,6 +54,7 @@ jobs:
           if [ ! -d android ]; then npx cap add android; fi
           mkdir -p android/app/src/main/assets
           npx cap sync android
+          if [ -f "adi-registration.properties" ]; then cp adi-registration.properties android/app/src/main/assets/; fi
 
       - name: Generate App Icons from icon.svg
         run: |
@@ -115,11 +116,26 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      - name: Sign APK and show SHA-256
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 -d > release.jks
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+          $BUILD_TOOLS/zipalign -f -p 4 android/app/build/outputs/apk/debug/app-debug.apk app-aligned.apk
+          $BUILD_TOOLS/apksigner sign \
+            --v1-signing-enabled true \
+            --ks release.jks \
+            --ks-key-alias "${{ secrets.ALIAS }}" \
+            --ks-pass "pass:${{ secrets.KEY_STORE_PASSWORD }}" \
+            --key-pass "pass:${{ secrets.KEY_PASSWORD }}" \
+            --out ControlFinanzas-signed.apk \
+            app-aligned.apk
+          rm -f release.jks app-aligned.apk
+          keytool -printcert -jarfile ControlFinanzas-signed.apk | grep "SHA256:"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         timeout-minutes: 5
         with:
           name: Control-Finanzas-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: ControlFinanzas-signed.apk
           retention-days: 7
-          
