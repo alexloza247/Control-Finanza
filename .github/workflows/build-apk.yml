@@ -73,7 +73,9 @@ jobs:
           fi
 
       - name: Install Finance Widget (native)
-        run: python3 widget/scripts/install-widget.py
+        run: |
+          python3 widget/scripts/install-widget.py
+          find android/app/src -type f \( -name "*.java" -o -name "*.kt" -o -name "*.xml" \) -exec sed -i 's/com\.alejandro\.controlfinanzas/com.alejandroloza.controlfinanzas/g' {} +
 
       - name: Fix missing Java imports in Widget
         run: |
