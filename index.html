@@ -26,9 +26,9 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 .color-row .ct span{font-size:13px;color:var(--mute2)}
 .color-row input[type=color]{width:52px;height:40px;padding:2px;border:1px solid var(--line);border-radius:10px;background:var(--surf);flex:none;cursor:pointer}
 .color-row .hex{font-family:monospace;font-size:13px;color:var(--mute2);width:74px;text-align:right;text-transform:uppercase}
-html{scroll-padding-top:calc(60px + env(safe-area-inset-top,0px))}
+html{scroll-padding-top:calc(64px + env(safe-area-inset-top,0px));overflow-x:hidden}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.4;padding-top:58px;padding-bottom:24px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.4;padding-top:62px;padding-bottom:24px;overflow-x:hidden}
 main{max-width:520px;margin:0 auto;padding:16px}
 h1{font-size:15px;font-weight:600;color:var(--mute2);margin:4px 0 0}
 h2{font-size:18px;margin:24px 0 10px;font-weight:800}
@@ -47,7 +47,7 @@ h2{font-size:18px;margin:24px 0 10px;font-weight:800}
 .bar{height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--g)}
 .bar i.hi{background:var(--r)}
 nav{position:fixed;left:0;right:0;top:0;background:var(--nav);border-bottom:1px solid rgba(0,0,0,.15);display:flex;padding:calc(6px + env(safe-area-inset-top,0px)) 8px 6px;z-index:5}
-nav button{flex:1;background:none;border:0;color:var(--navink);opacity:.75;font:inherit;font-size:13px;padding:10px 4px;font-weight:600;display:flex;align-items:center;justify-content:center}
+nav button{flex:1;background:none;border:0;color:var(--navink);opacity:.75;font:inherit;font-size:13px;padding:12px 4px;font-weight:600;display:flex;align-items:center;justify-content:center}
 nav button.on{color:var(--navink);opacity:1;background:rgba(0,0,0,.14);box-shadow:inset 0 -3px 0 var(--navink)}
 .fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:28px;border:0;background:var(--primary);color:#fff;font-size:30px;z-index:6;box-shadow:0 4px 14px #0004}
 .btn{background:var(--primary);color:#fff;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:600;width:100%}
@@ -142,12 +142,12 @@ a.lnk{color:var(--g);font-weight:600;background:none;border:0;font:inherit;paddi
 .toast.err{background:var(--r);color:#fff}
 .toast-check{display:inline-block;margin-right:6px}
 #app.tab-enter .item,#app.tab-enter .total{animation:fadeSlide .22s ease-out both}
-#app.slide-l{animation:slideFromR .25s ease-out}
-#app.slide-r{animation:slideFromL .25s ease-out}
+#app .view.slide-l{animation:slideFromR .25s ease-out}
+#app .view.slide-r{animation:slideFromL .25s ease-out}
 button,.cd{transition:transform .12s ease,opacity .12s ease}
 button:active,.cd:active{transform:scale(.96);opacity:.85}
 *{-webkit-tap-highlight-color:transparent}
-@media (prefers-reduced-motion:reduce){#app.tab-enter .item,#app.tab-enter .total,#app.slide-l,#app.slide-r,.sheet .box,.calcsheet .box,.photosheet .box,.sheet.closing,.calcsheet.closing,.photosheet.closing,.sheet.closing .box,.calcsheet.closing .box,.photosheet.closing .box,.toast{animation:none}button,.cd{transition:none}}
+@media (prefers-reduced-motion:reduce){#app.tab-enter .item,#app.tab-enter .total,#app .view.slide-l,#app .view.slide-r,.sheet .box,.calcsheet .box,.photosheet .box,.sheet.closing,.calcsheet.closing,.photosheet.closing,.sheet.closing .box,.calcsheet.closing .box,.photosheet.closing .box,.toast{animation:none}button,.cd{transition:none}}
 </style>
 </head>
 <body>
@@ -215,7 +215,7 @@ function render(){
  var tabChanged=(tab!==lastRenderedTab);lastRenderedTab=tab;
  var h='';
  if(tab==='home')h=home();else if(tab==='tx')h=txs();else if(tab==='cal')h=cal();else if(tab==='cfg')h=settingsHtml();else h=accs();
- $('app').innerHTML=h;
+ $('app').innerHTML='<div class="view">'+h+'</div>';
  if(tabChanged){var ap=$('app');ap.classList.add('tab-enter');setTimeout(function(){ap.classList.remove('tab-enter')},350)}
  var gearSvg='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
  $('nav').innerHTML=[['home','Resumen'],['tx','Movimientos'],['cal','Calendario'],['acc','Cuentas'],['cfg',gearSvg,'Configuración']].map(function(t){return '<button data-t="'+t[0]+'" class="'+(tab===t[0]?'on':'')+'"'+(t[2]?' aria-label="'+t[2]+'" title="'+t[2]+'"':'')+'>'+t[1]+'</button>'}).join('');
@@ -225,10 +225,14 @@ function render(){
 /* Cambio de pestaña con deslizamiento: la vista nueva entra desde la
    derecha si se avanza (dir>0) o desde la izquierda si se retrocede
    (dir<0), en el orden Resumen, Movimientos, Calendario, Cuentas,
-   Configuración. Sin movimiento (prefers-reduced-motion) cambia directo. */
+   Configuración. Sin movimiento (prefers-reduced-motion) cambia directo.
+   La animación va SOLO sobre el contenido de la vista (.view), nunca
+   sobre #app entero: así el encabezado fijo (nav) no se mueve con el
+   deslizamiento. Además html/body tienen overflow-x:hidden para que el
+   contenido desplazado no pueda mover la página a los lados. */
 var TABS=['home','tx','cal','acc','cfg'],lastRenderedTab=null;
 var REDUCED=false;try{REDUCED=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}catch(e){}
-function goTab(t,dir){var i=TABS.indexOf(t),j=TABS.indexOf(tab);if(i<0||t===tab)return;if(!dir)dir=i>j?1:-1;tab=t;var app=$('app');if(app&&dir&&!REDUCED){app.classList.remove('slide-l','slide-r');void app.offsetWidth;app.classList.add(dir>0?'slide-l':'slide-r');setTimeout(function(){app.classList.remove('slide-l','slide-r')},300)}render();window.scrollTo(0,0)}
+function goTab(t,dir){var i=TABS.indexOf(t),j=TABS.indexOf(tab);if(i<0||t===tab)return;if(!dir)dir=i>j?1:-1;tab=t;render();var v=$('app').firstElementChild;if(v&&dir&&!REDUCED){v.classList.remove('slide-l','slide-r');void v.offsetWidth;v.classList.add(dir>0?'slide-l':'slide-r');setTimeout(function(){v.classList.remove('slide-l','slide-r')},300)}window.scrollTo(0,0)}
 /* Números que suben/bajan animados: saldos y totales cuentan hasta el valor
    nuevo en ~280 ms en vez de saltar. El valor anterior se guarda por clave
    (data-k) entre renders; la primera vez cuentan desde 0. Los elementos con
