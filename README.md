@@ -2,182 +2,90 @@
 
 ![Icono de la app](icon.svg)
 
-App móvil para llevar el control de tus finanzas personales: efectivo, débito y crédito, en español y en pesos mexicanos (MXN).
+App para llevar el control de tu dinero: efectivo, débito y crédito, en español y en pesos mexicanos (MXN).
+
+Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se comparte con otros dispositivos.
 
 ## Capturas de pantalla
-
-Así se ve la app (con datos de ejemplo):
 
 ![Resumen: dinero disponible, dinero libre, pagos próximos y gráficas](screenshots/resumen.jpg)
 
 ![Cuentas: efectivo, débito y crédito](screenshots/cuentas.jpg)
 
-![Movimientos con ícono Repetir](screenshots/movimientos.jpg)
-
-![Búsqueda por monto en Movimientos](screenshots/busqueda.jpg)
-
-![Calendario con pagos próximos](screenshots/calendario.jpg)
-
-![Configuración: notificaciones](screenshots/notificaciones.jpg)
-
-![Configuración: apariencia](screenshots/apariencia.jpg)
-
-![Configuración: datos, respaldo, historial de ajustes y categorías](screenshots/datos.jpg)
-
 ![Advertencia al gastar más de lo disponible](screenshots/advertencia.jpg)
 
-## Funciones
+> Las capturas de Movimientos, Calendario y Configuración están por actualizarse, porque esas pantallas cambiaron desde la versión anterior.
 
-### Cuentas
+## Resumen
 
-- Cuentas de efectivo, débito y crédito.
-- Nombre, saldo o deuda actual, y para crédito: límite (obligatorio al crear o editar la tarjeta, para que "Confirma tus saldos" pueda pedir el crédito disponible), día de corte, día de pago y frecuencia de pago mensual o quincenal (cada fecha se repite 15 días después). La ayuda debajo de la frecuencia cambia según la opción elegida (Mensual o Quincenal).
-- Al guardar una cuenta aparece el aviso "Guardado".
-- Barra de uso del límite de crédito y crédito disponible.
-- Crear, editar y eliminar cuentas (eliminar una cuenta también elimina sus movimientos).
-- Resumen de dinero disponible y deuda total en tarjetas. Los ingresos y gastos del mes del Resumen (y del widget) se calculan con la hora local del dispositivo, así que el último día del mes no se mezclan dos meses.
-- **Puedes gastar:** en el Resumen, junto al disponible, se muestra lo que queda de verdad después de restar los pagos próximos que vencen este mes y la mensualidad MSI de este mes; los pagos ya hechos este mes no se restan. Si el resultado es negativo, se muestra con su signo.
-- **Compartir reporte del mes:** botón en el Resumen que arma un texto bonito del mes actual (ingresos, gastos, balance, gastos por categoría con %, deuda en tarjetas y pagos próximos del mes) y lo comparte con el menú de compartir de la app (elige WhatsApp y el contacto) o con navigator.share en el navegador; si no hay cómo compartir, se copia al portapapeles. Nada se sube a ningún servidor. Si el mes no tiene movimientos, el texto lo dice.
+- **Dinero disponible**, deuda en tarjetas, ingresos y gastos del mes.
+- **Puedes gastar:** lo que te queda de verdad después de restar los pagos próximos que vencen este mes y la mensualidad de tus compras a meses.
+- **Atajos:** botones para tus gastos o ingresos de siempre (por ejemplo, "Pasaje camión").
+- **Pagos próximos:** tus pagos pendientes ordenados por fecha, con aviso cuando faltan 3 días o menos.
+- **Gráficas:** Por categoría, Ingresos vs gastos y Evolución, por día, semana o mes.
+- **Compartir reporte del mes:** arma un texto con ingresos, gastos, balance, gastos por categoría y pagos próximos, listo para enviar por WhatsApp.
+- **Pagos de tarjeta:** lo que debes pagar este mes en cada tarjeta.
 
-### Movimientos
+## Movimientos
 
-- Registrar ingresos, gastos y transferencias entre cuentas.
-- Categorías: Comida, Transporte, Casa, Servicios, Educación, Salud, Ocio, Compras, Sueldo y Otros, más categorías propias que se crean y eliminan en **Configuración > Mis categorías** (también se puede crear una nueva desde el formulario de movimiento, con el chip "+ Nueva").
-- Si un gasto o una transferencia supera lo disponible en la cuenta origen (saldo en efectivo/débito, crédito disponible en tarjeta), aparece una advertencia con el monto, lo disponible y la cuenta, y te pregunta si quieres seguir o cancelar: al seguir, el movimiento se guarda aunque la cuenta quede en negativo; al cancelar, no se guarda nada y vuelves al formulario. Una compra a MSI cuenta por su monto completo contra el disponible. Lo mismo aplica al pagar una tarjeta desde una cuenta con saldo insuficiente. Los ingresos, los ajustes de saldo y pagar una tarjeta sin descontar de otra cuenta no muestran esta advertencia.
-- Los montos se redondean a centavos: un saldo de cero nunca se muestra como "-$0.00".
-- Nota, fecha y hora (formato 24 h) y monto con formato de moneda. Al crear un movimiento la hora se prellena con la hora actual y se puede cambiar; al editarlo se muestra su hora guardada. La hora se muestra en la lista junto a la fecha ("· 15:30"); los movimientos viejos sin hora se muestran igual que antes.
-- El campo Monto tiene un botón con un ícono minimalista de calculadora que abre una calculadora (suma, resta, multiplicación y división, con precedencia estándar: primero × ÷, luego + −); el botón **Insertar** pone el resultado, redondeado a centavos, en el campo Monto. Si se cierra sin insertar, el Monto queda como estaba. Si el Monto ya tenía un número, la calculadora arranca con ese valor.
-- Los movimientos se ordenan por fecha descendente y, dentro del mismo día, por hora descendente (el más reciente arriba); los movimientos sin hora van después de los que tienen hora ese día.
-- Filtro por cuenta: un selector debajo de los filtros de tipo permite ver solo los movimientos de una cuenta (por ejemplo solo la Nu) o todas; convive con la búsqueda (por monto/fecha) y con los separadores por día, y los totales mensuales de la lista se calculan sobre lo filtrado. Una transferencia aparece al filtrar por cualquiera de sus dos cuentas (origen o destino). Al filtrar por UNA cuenta, los totales se calculan desde esa cuenta: lo que entra (ingresos a la cuenta + transferencias hacia ella) y lo que sale (gastos de la cuenta + transferencias desde ella); al ver TODAS las cuentas, las transferencias no cuentan como ingreso ni gasto global, porque son movimientos internos.
-- Editar y eliminar movimientos.
-- Cada movimiento muestra un ícono de lápiz (✎) para que se vea que se puede editar.
-- Buscador por nota, categoría, cuenta, monto y fecha ("500" encuentra el gasto de $500; "13/11", "13 nov" o "2026-11-13" encuentran los movimientos de ese día), y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
-- Cada movimiento tiene un ícono **↻ Repetir** debajo del lápiz de editar, arriba a la derecha de su tarjeta, que abre el formulario prellenado con sus mismos datos (tipo, monto, cuenta, categoría, nota y términos MSI) pero con la fecha y hora de hoy; al guardar se crea un movimiento nuevo y el original no se toca. Repetir no copia la foto del ticket: cada compra tiene su propio ticket.
-- **Foto del ticket:** al crear o editar un movimiento se puede adjuntar la foto del ticket con dos botones: **📷 Tomar foto** (abre la cámara directo) y **🖼️ Elegir de la galería**; la foto se comprime en el teléfono antes de guardarse junto al movimiento, aparece como miniatura en la lista y se abre en grande al tocarla. Al editar se puede cambiar (con cualquiera de los dos botones) o quitar. Si el almacenamiento no alcanza para guardar con la foto, el movimiento se guarda sin ella antes que perderse. Para que la cámara se abra en Android 11+, el manifiesto de la app declara `<queries>` con el intent de captura de imagen (lo agrega `widget/scripts/install-widget.py` en el build); no hace falta el permiso de cámara porque el intent lo atiende la app de cámara del sistema. Al abrirla en grande, el botón **⬇️ Descargar** guarda la foto como `ticket-AAAA-MM-DD.jpg` (fecha del movimiento) en Descargas/Control de Finanzas en la app, o la descarga directo en el navegador.
-- Al guardar un movimiento aparece el aviso "Guardado".
-- Al crear una compra a MSI en tarjeta de crédito, el formulario muestra la mensualidad en vivo antes de guardar ("Mensualidad: $1,000.00 al mes · 12 pagos").
-- Lista de movimientos agrupada por mes, con ingresos y gastos del mes; dentro de cada mes, un pequeño separador por día ("11 de Noviembre 2026") antes de los movimientos de ese día.
-- Atajos: botones para tus gastos o ingresos de siempre (por ejemplo, "Pasaje camión"), con monto, cuenta y categoría predefinidos; también se pueden editar y eliminar.
+- Registra **ingresos, gastos y transferencias** entre tus cuentas, con nota, fecha y hora, y categoría. Puedes crear tus propias categorías en Configuración > Mis categorías.
+- El campo **Monto** tiene una calculadora: haz la cuenta y toca **Insertar**.
+- **Foto del ticket:** tómale foto al ticket o elígela de la galería; se guarda con el movimiento y la puedes descargar.
+- Busca por nota, categoría, cuenta, monto o fecha (por ejemplo "500" o "13/11") y filtra por tipo (Todos, Ingresos, Gastos, Transferencias) o por cuenta.
+- El lápiz (✎) edita el movimiento y el ícono **↻** de abajo lo repite: abre el formulario ya lleno con los mismos datos y la fecha de hoy.
+- Si un gasto supera lo disponible en la cuenta, la app te avisa y tú decides si seguir o cancelar.
+- Al eliminar un movimiento (o un pago, cuenta, atajo o categoría), la app pregunta antes para que no se borre por accidente.
 
-### Tarjetas de crédito y meses sin intereses (MSI)
+## Tarjetas de crédito y meses sin intereses (MSI)
 
-- Compras a meses sin intereses: pago único o a 3, 6, 9, 12, 18, 24 meses, o un número personalizado.
-- Cada compra MSI muestra su mensualidad y cuántos pagos lleva y le faltan.
-- Pagar tarjeta: registra el pago desde efectivo o débito, o sin descontar de otra cuenta; el monto no puede ser mayor a la deuda. El formulario muestra la deuda total y, si hay MSI activos, la mensualidad de este mes, con un botón "Pagar solo la mensualidad" para no pagar la deuda completa por accidente.
-- Al guardar un pago aparece el aviso "Pago registrado".
-- Los pagos se descuentan primero de los planes MSI, del plan más viejo al más nuevo, y solo lo que sobra va a la demás deuda (compras sin MSI y saldos viejos); así cada pago mensual avanza el contador del plan (1/12, 2/12…). Antes el pago iba a la compra más vieja sin importar si era MSI, y el plan se quedaba en 0/N. Un plan pagado por completo deja de aparecer como activo.
+- Compra a meses sin intereses: 3, 6, 9, 12, 18, 24 meses o un número propio. Cada plan muestra su mensualidad y cuántos pagos lleva.
+- **Pagar tarjeta:** paga desde efectivo o débito, o sin descontar de otra cuenta. Si hay MSI activos, puedes pagar solo la mensualidad. Los pagos se aplican primero a los planes MSI más viejos.
 
-### Gráficas
+## Calendario
 
-- En la pestaña **Resumen**, sección **Gráficas** (sin librerías externas, funciona sin internet), con dos selectores que se guardan: uno de **periodo** (Día / Semana / Mes) y uno para escoger cuál gráfica ver — solo se muestra la elegida:
-  - **Periodo:** Día = hoy, Semana = semana actual de lunes a domingo, Mes = mes actual. Las tres gráficas respetan el periodo elegido.
-  - **Por categoría:** barras con monto en MXN y porcentaje del gasto total del periodo, de mayor a menor.
-  - **Ingresos vs gastos (pastel):** gráfica de pastel (donut) de ingresos vs gastos del periodo, con montos, porcentajes y el balance del periodo en el centro.
-  - **Evolución:** barras agrupadas de ingresos vs gastos; en Día una sola pareja de barras del día, en Semana una por día (lunes a domingo) y en Mes una por mes de los últimos 6 meses. Al tocar cada barra se ve el monto exacto.
-- Los porcentajes siempre suman 100% (se reparte el resto del redondeo entre las categorías con mayor fracción).
-- Las transferencias no cuentan como ingreso ni gasto; una compra a MSI cuenta como gasto completo en el mes de la compra, igual que en el resumen.
-- Si no hay movimientos en el periodo, muestra "Aún no hay movimientos en este periodo".
+- Ve el mes con marcas por día: pago límite, corte, pago próximo y movimientos.
+- Debajo del mes ves los totales de ese mes (ingresos, gastos y balance).
+- Toca un día para ver sus eventos y movimientos, y crea un pago próximo desde ese día.
+- Puedes agregar los pagos a Google Calendar.
 
-### Navegación
+## Pagos próximos
 
-- La barra de navegación está fija en la parte de **arriba**, con Resumen, Movimientos, Calendario, Cuentas y el engranaje de Configuración.
-- También se puede cambiar de pestaña **deslizando el dedo** a la izquierda o a la derecha sobre el contenido, en el orden de las pestañas; el deslizamiento va en el mismo sentido que la animación del cambio. Necesita un deslizamiento claro (más de 60 px y más horizontal que vertical), así un toque normal o el desplazamiento de la página no cambian de pestaña, y no interfiere con el desplazamiento dentro de las gráficas, tablas o listas.
-- En Configuración puedes elegir el **color de la barra de navegación** (cuarto color del tema), distinto al fondo para que no se pierda; el texto se adapta (blanco u oscuro) según el color que elijas.
-- El botón de **regresar** del celular cierra primero el modal que tengas abierto; solo si no hay ningún modal abierto sale de la app.
+- Crea pagos pendientes con nombre, monto, fecha y cuenta.
+- Se repiten una vez, cada semana, cada quincena, cada mes o cada N días.
+- Puedes ponerles un fin: que se repitan hasta X veces o hasta una fecha; al llegar al fin quedan como **Finalizado** (no se borran).
+- Para pagar, toca **Revisar y pagar**.
 
-### Animaciones
+## Recordatorios
 
-- Las tarjetas aparecen con un desvanecido suave al cambiar de pestaña; los botones reaccionan al tocarlos (se hunden un poco); al cambiar de pestaña la vista se desliza en el sentido del cambio, pero el encabezado superior con los nombres de las pestañas se queda fijo (solo se desliza el contenido de abajo); y los saldos y totales cuentan hasta su valor nuevo en vez de saltar. Las gráficas también se animan: la dona de Ingresos vs gastos se dibuja, las barras de Por categoría y de Evolución crecen desde cero, y al cambiar de periodo (Día / Semana / Mes) o de tipo de gráfica el cambio entra con un desvanecido en vez de reemplazarse de golpe. Los formularios y las ventanas (agregar movimiento, pago próximo, confirmaciones, etc.) entran deslizándose desde abajo con un desvanecido y salen igual, hacia abajo con un desvanecido. Las alertas aparecen también con animación y son blancas con texto oscuro, como estaban antes; los errores van en rojo con una ✕. Son animaciones cortas (150–300 ms) para que la app siga rápida, y se desactivan solas si el teléfono tiene activado "Reducir movimiento".
-- Al eliminar un movimiento, un pago próximo, una cuenta, un atajo o una categoría, la app pregunta antes si estás seguro (con Confirmar y Cancelar); nada se borra hasta confirmar, y al confirmar avisa con una alerta qué se eliminó ("Movimiento eliminado", "Pago próximo eliminado", etc.).
-- Si al guardar un formulario falta un campo obligatorio (cuenta, categoría, monto, nombre, fecha, límite de crédito, etc.), además de la alerta el campo que falta se resalta con un borde rojo; el resaltado se quita solo cuando el campo se completa.
+En **Configuración > Notificaciones** está el interruptor maestro: si está apagado, ningún recordatorio suena.
 
-### Pagos próximos
+- **Recordatorio diario de saldos:** cada día a la hora que elijas (por defecto 23:00), la app te pide confirmar el saldo de cada cuenta. Las tarjetas se confirman por su **crédito disponible**. Si corriges un saldo, se crea un ajuste para que todo cuadre. Si no confirmas, te avisa hasta 2 veces más (máximo 3 avisos al día). Hay un botón **Probar recordatorio**.
+- **Recordatorio de pagos próximos:** te avisa un día antes y el mismo día de cada pago (por defecto a las 09:00). Nace apagado: actívalo si lo quieres. Al tocar el aviso se abre el formulario para pagar.
 
-- Crear pagos pendientes con nombre, monto opcional, fecha y cuenta.
-- El botón **+** (abajo a la derecha) te deja elegir entre "Nuevo movimiento" y "Nuevo pago próximo"; también se puede crear un pago próximo desde **Calendario**, con el botón "+ Pago próximo" (usa el día seleccionado, o el de hoy).
-- El botón para pagar un pago próximo dice "Revisar y pagar", porque primero se revisa el movimiento y luego se confirma con Guardar.
-- Se repiten una vez, cada semana, cada quincena, cada mes o con una frecuencia personalizada (cada N días, por ejemplo cada 10 días); al pagarlos se registra el movimiento y la fecha avanza según la frecuencia elegida, las veces que haga falta hasta quedar en el futuro: un pago muy vencido no vuelve a quedar vencido. La quincena avanza 15 días, igual que en las tarjetas de crédito.
-- Fin opcional ("stop"): al crear o editar un pago con repetición se puede elegir un fin: **Hasta X veces** (se repite N veces y se detiene) o **Hasta una fecha** (se repite hasta esa fecha). Al llegar al fin, el pago deja de avanzar y de avisar, pero **no se borra**: queda en la lista como **Finalizado** y se puede editar para quitarle o cambiarle el fin. La lista muestra el fin ("quedan 3 veces", "hasta 31 dic 2026"); los pagos sin fin se repiten como antes, sin límite.
-- El botón de calendario (icono) en cada pago próximo crea el evento en Google Calendar con la repetición correspondiente (semanal, cada 15 días, mensual o cada N días).
-- En el Resumen se muestran ordenados por fecha, con avisos cuando faltan 3 días o menos.
+## Configuración: apariencia
 
-### Widget de inicio (5x2)
+- Crea tu propio tema con tus colores (principal, secundario, fondo y barra de navegación) o usa el modo Claro, Oscuro o Automático.
 
-- Widget de pantalla principal de 5x2 con 5 pestañas solo con iconos (sin textos): **Saldo** (cartera), **Próximos pagos** (calendario), **Ingreso** (flecha entrando), **Gasto** (flecha saliendo) y **Transferencia** (flechas de intercambio).
-- **Saldo:** el recuadro de saldo de la app (dinero disponible, deuda en tarjetas, ingresos y gastos del mes).
-- **Próximos pagos:** los próximos pagos con fecha y monto, cada uno en su propio recuadro; al picar uno se abre su "Revisar y pagar". El nombre y el monto van en la primera línea y el vencimiento ("vence hoy", "vencido hace 1 día"...) en una segunda línea más chica, para que nada se corte.
-- **Tema:** el widget sigue los colores de la app (fondo, principal, modo Claro/Oscuro/Automático); en modo oscuro usa superficies oscuras. En Android anterior a 12 mantiene sus colores fijos.
-- **Ingreso, Gasto y Transferencia:** botón "Registrar movimiento" y los atajos de ese tipo (por ejemplo, "Pasaje camión" con "$7.00" en su segunda línea, en Gasto). Al picar un atajo se abre la app con el formulario de movimiento prellenado con ese atajo, y ahí se confirma el registro. El widget **no registra nada en segundo plano**: el toque siempre abre la app.
-- El widget muestra máximo 2 pagos próximos y 3 atajos por pestaña; el resto se ve en la app. Si aún no hay atajos de un tipo, la pestaña ofrece crear uno. El contenido se desliza arriba/abajo (la fila de pestañas queda fija y debajo va una lista con el botón, los atajos y los pagos), así nada queda cortado: lo que no quepa se alcanza deslizando. Elementos grandes y legibles (saldo grande, botón de registro de 46dp, filas de pagos de al menos 64dp de alto con el vencimiento en segunda línea, atajos en filas de 2 chips con el monto en su segunda línea y más espacio entre líneas para que el texto no se empalme, textos de 13–16sp). El detalle del saldo se muestra en dos líneas (Deuda y Mes).
-- **Cómo funciona:** el widget nativo no puede leer el almacenamiento local de la app, así que la app escribe un resumen (saldos, atajos por tipo, próximos pagos y el tema: colores y modo) en `@capacitor/preferences` cada vez que guarda y al arrancar. El widget lo lee y se actualiza al tocar una pestaña y cada 30 minutos. Al picar un elemento del widget, el toque va primero al provider (broadcast): este guarda el enlace como acción pendiente en el mismo almacenamiento y abre la app con el deep link; la app lo lee al arrancar (además del deep link y del evento `appUrlOpen`), así el formulario siempre se abre aunque Capacitor no entregue la URL del intent. La plantilla de ese toque es un PendingIntent **mutable**: con inmutable, Android ignora el fill-in intent que lleva el enlace y el botón no hacía nada (ni siquiera abría la app); si alguna vez llega sin enlace, el provider abre la app en inicio en vez de quedarse en silencio. El código nativo vive en la carpeta `widget/` y se instala en el proyecto Android con `python3 widget/scripts/install-widget.py` (paso del workflow, después de `npx cap sync`). Ese mismo script declara en el manifiesto `<queries>` con el intent de captura de imagen, para que el botón 📷 Tomar foto de la foto del ticket abra la cámara en Android 11+ (sin esa declaración, el botón solo abría la galería).
-- **Para agregar el widget:** instala el APK, mantén presionada la pantalla principal, elige Widgets, busca "Control de Finanzas" y arrástralo. Si el widget pide abrir la app, es porque aún no se han guardado datos desde que se instaló.
+## Respaldo y datos
 
-### Calendario
+- En **Configuración > Datos**, **Descargar respaldo** guarda un archivo con la fecha en tu carpeta de Descargas. Para recuperar tus datos, toca **Restaurar respaldo** y elige el archivo.
+- **Historial de ajustes:** ahí ves los cambios de saldo que hiciste al confirmar tus saldos (los últimos 2 días, con **Ver más** para ver todos).
+- Las fotos de los tickets viajan dentro del respaldo.
 
-- Calendario mensual con navegación por mes y selección de día.
-- Debajo del mes se muestran los totales de ese mes (ingresos, gastos y balance), como en Resumen; al navegar a otro mes con las flechas cambian a los de ese mes.
-- Marcas por día: pago límite de tarjeta, fecha de corte, pago próximo y movimientos del día.
-- La leyenda de los puntitos está en una cuadrícula ordenada de 2×2, con cada símbolo junto a su etiqueta, para que nada se corte.
-- Detalle del día seleccionado con sus eventos y movimientos, ingresos y gastos de ese día.
-- Botón de calendario (icono) en pagos de tarjeta y pagos próximos: abre el evento en Google Calendar, con repetición mensual cuando aplica.
+## Widget de inicio (5x2)
 
-### Recordatorio diario de saldos
+- Widget para la pantalla principal con 5 pestañas: Saldo, Próximos pagos, Ingreso, Gasto y Transferencia.
+- Desde ahí ves tu saldo y tus próximos pagos, y puedes abrir el formulario para registrar un movimiento con tus atajos. El widget nunca registra nada solo: siempre abre la app para que confirmes.
+- Para agregarlo: mantén presionada la pantalla principal, elige Widgets, busca "Control de Finanzas" y arrástralo.
 
-- En la pestaña **Configuración**, sección **Notificaciones**, eliges a qué hora quieres el recordatorio (por defecto, 23:00) y si está activado. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
-- Cada día, a esa hora, la app te pide confirmar el saldo de cada cuenta: efectivo y débito por su saldo actual, y las tarjetas de crédito por su **crédito disponible** (deuda = límite − disponible), con los montos que marca la app ya escritos. Si una tarjeta no tiene límite guardado, o su deuda supera el límite, se pide su deuda actual (el disponible no puede representar una deuda mayor al límite). Un disponible mayor que el límite se toma como deuda $0.
-- Si corriges un saldo, se crea un movimiento de **Ajuste de saldo** (ingreso, gasto o pago de tarjeta, según el caso) para que la app quede acorde a lo que realmente tienes.
-- El recordatorio aparece una sola vez al día. Si no confirmas tus saldos, llegan hasta dos avisos más, una y dos horas después de la hora configurada (máximo 3 avisos por día); al confirmar saldos se cancelan los avisos pendientes de ese día. En **Configuración** hay un botón **Probar recordatorio** para verlo en ese momento.
-- También muestra la fecha de tu última confirmación de saldos.
-- Al tocar la notificación del recordatorio se abre directamente el modal **Confirma tus saldos** para confirmar los saldos en ese momento.
+## Cómo moverte por la app
 
-### Recordatorio de pagos próximos
+- La barra de arriba tiene Resumen, Movimientos, Calendario, Cuentas y Configuración (el engranaje).
+- También puedes cambiar de pestaña deslizando el dedo a la izquierda o a la derecha.
+- El botón **+** (abajo a la derecha) te deja crear un movimiento o un pago próximo.
+- El botón de regresar del teléfono cierra primero la ventana que tengas abierta.
 
-- En la pestaña **Configuración**, sección **Notificaciones**, hay un bloque **Recordatorio de pagos próximos**, igual que la de saldos: interruptor Activado/Desactivado y hora del aviso (por defecto, 09:00). Nace **desactivado**: cada quien lo activa si lo quiere. Solo funciona si el interruptor maestro de **Notificaciones** está activado.
-- Un día antes de cada fecha de pago y también el mismo día, la app programa una notificación local en el dispositivo, a la hora elegida. Cubre los **pagos próximos** y los **pagos límite de las tarjetas de crédito con deuda**.
-- El aviso de "un día antes" solo se programa para fechas que aún no llegan (vence mañana o después); el aviso del mismo día cubre también lo que vence hoy. Si la hora del aviso de hoy ya pasó, el aviso se programa para dentro de un minuto, para que llegue hoy mismo y no se pierda en silencio.
-- Las notificaciones se reprograman solas: al abrir la app, al guardar cambios (crear, pagar o editar un pago, pagar una tarjeta, cambiar una cuenta) y al cambiar la hora o el interruptor en Configuración. Al desactivarlo se cancelan los avisos programados. Cada aviso llega una sola vez: la app guarda qué aviso ya se programó y con qué hora, así que aunque se abra la app varias veces después de la hora, el aviso no se repite; los avisos viejos se cancelan antes de reprogramar, para no duplicar.
-- Al tocar la notificación de un pago, la app se abre directamente en su formulario para pagarlo (el pago próximo o la tarjeta); si el pago ya no existe, se abre el Resumen. El recordatorio diario de saldos sigue abriendo **Confirma tus saldos** como antes.
+## Instalar y actualizar
 
-### Notificaciones
-
-- La pestaña **Configuración** se divide en tres secciones: **Notificaciones**, **Apariencia** y **Datos**.
-- **Notificaciones** tiene un interruptor maestro **Notificaciones** (Activado/Desactivado) que controla todos los recordatorios. Nace **apagado** para las instalaciones nuevas, para que cada quien lo active y le dé permisos a la app; si ya tenías activado el recordatorio de saldos o el de pagos, al actualizar el maestro arranca prendido para no apagar tus avisos.
-- Al activar el maestro se pide el permiso de notificaciones (del sistema en la app, del navegador en web). Si se concede, se reprograman los recordatorios según sus interruptores individuales; si se deniega, el maestro queda apagado y la app avisa que hacen falta los permisos.
-- Al desactivar el maestro se cancelan TODAS las notificaciones programadas (saldos y pagos) y los recordatorios quedan inactivos: no llega notificación, no aparece el modal de las 23:00 en la app ni el aviso de pagos en el Resumen. Los interruptores individuales y sus horas se conservan al apagar y prender el maestro.
-- Con el maestro desactivado, los dos bloques de recordatorio se ven oscuros (apagados) y no se pueden tocar, con una notita de "Activa las notificaciones para usar los recordatorios". Con el maestro activado se ven normales y cada recordatorio se puede activar o desactivar por separado con su hora.
-- **En el navegador:** si el navegador lo permite y la app está abierta, el recordatorio diario llega también como notificación a la hora configurada.
-- **En el dispositivo (APK):** con Capacitor y el plugin LocalNotifications, el recordatorio diario se programa en el dispositivo a la hora configurada, para que funcione aunque la app esté cerrada. El recordatorio de pagos próximos también se programa en el dispositivo (un día antes, a la hora elegida), con el mismo mecanismo.
-- **Al tocar la notificación:** se abre el modal **Confirma tus saldos** de la app. En el APK funciona incluso si la app estaba cerrada: el toque la abre directamente en ese modal. En el navegador, el toque enfoca la app y abre el mismo modal.
-- Si no hay notificaciones disponibles, el aviso aparece dentro de la app al abrirla; Configuración lo dice claramente.
-
-### Configuración y tema
-
-- Pestaña **Configuración** en tres secciones: **Notificaciones** (interruptor maestro, recordatorio diario de saldos con su hora e interruptor y botón **Probar recordatorio**, y recordatorio de pagos próximos con su interruptor —desactivado por defecto— y su hora —por defecto, 09:00—), **Apariencia** (modo y colores) y **Datos** (nota de datos locales, Respaldo e Historial de ajustes). Al apagar el maestro se cancelan también las notificaciones programadas en el dispositivo. La sección **Mis categorías** permite crear y eliminar tus categorías propias.
-- **Tema / colores:** elige tus propios tres colores para crear tu tema: color principal, color secundario y color de fondo, más el color de la barra de navegación, con un botón para restablecer los colores de siempre. Se aplica en vivo y se guarda en el dispositivo.
-- **Modo Claro / Oscuro / Automático:** temas predefinidos de modo claro y oscuro, o automático según el dispositivo. En modo oscuro se conservan las superficies oscuras para que se siga leyendo bien, con tus colores principal y secundario encima.
-
-### Respaldo y datos
-
-- En la pestaña **Configuración**, sección **Respaldo**: el respaldo es **solo por archivo** — ya no hay opción de copiar ni de pegar el texto, porque a veces se copiaba incompleto y el respaldo quedaba corrupto. El botón **Descargar respaldo** guarda el archivo `respaldo-finanzas-AAAA-MM-DD.txt` (con la fecha del día en que se hizo) directo en la carpeta Descargas/Control de Finanzas del teléfono **en la app** (lo hace el plugin local `plugins/backup-download`, con MediaStore en Android 10+; `@capacitor/filesystem` no sirve para esto porque no tiene carpeta de Descargas y sus carpetas públicas están bloqueadas por el almacenamiento con alcance en Android 11+). Si la descarga directa falla, la app cae de vuelta al menú de compartir de Android (Drive, Archivos, Keep, etc.) y avisa; **en el navegador** el botón **Descargar archivo** lo descarga con el mismo nombre con fecha; y **Restaurar respaldo** solo deja elegir el archivo `.txt` o `.json` (los respaldos viejos `.json` siguen funcionando) para recuperar tus datos; reemplaza los datos actuales. Las fotos de los tickets viajan dentro del respaldo, así que con muchas fotos el respaldo pesa más. Antes de reemplazar nada, la app valida la estructura del respaldo (cuentas y movimientos deben ser listas, y pagos próximos, atajos, categorías y ajustes con su tipo correcto); si el archivo no es válido, la app avisa y no cambia nada.
-- **Historial de ajustes:** en Configuración > Datos, la sección **Historial de ajustes** muestra por defecto solo los ajustes de los últimos 2 días (hoy y ayer: cuenta, valor anterior → valor nuevo, fecha y hora), del más reciente al más viejo; si hay ajustes más viejos, el botón **Ver más** abre una mini ventana aparte con TODOS los ajustes. Los ajustes viejos (anteriores a esta función) no aparecen: el historial empieza a partir de ahora. Si confirmar saldos no cambia nada, no se registra nada. El historial se incluye en el respaldo y se recupera al restaurar.
-- Los datos se guardan solo en este dispositivo, en el almacenamiento local del navegador (`localStorage`, clave `misfinanzas_v1`), y no se sincronizan con otros dispositivos ni con servidores.
-
-## Cómo usarla
-
-### En el navegador
-
-Abre el archivo `index.html` en tu navegador. No necesita servidor ni instalación.
-
-### Como app Android (APK)
-
-Requisitos: Node.js y Android Studio.
-
-```bash
-npm install
-npx cap add android
-npx cap sync
-```
-
-Luego abre el proyecto en Android Studio (`npx cap open android`) y genera el APK desde ahí, o compila con Gradle. La app usa el mismo `index.html` y sus datos quedan guardados en el dispositivo.
-
-También se puede automatizar la compilación con GitHub Actions: el workflow `.github/workflows/build-apk.yml` ya está en el repositorio y se ejecuta en cada push a `main` (o manualmente desde la pestaña Actions con "Run workflow"). Instala las dependencias, sincroniza Capacitor y compila el APK de depuración, que queda como artefacto **Control-Finanzas-APK** para descargar. Con ese APK instalado, el recordatorio diario llega con la app cerrada y al tocar la notificación se abre el modal para confirmar saldos.
+- Puedes usarla en el navegador (https://alexloza247.github.io/Control-Finanza/) o instalar el APK en tu teléfono.
+- Cada APK nuevo se instala desinstalando el anterior, porque cada versión se firma de forma distinta. **Antes de desinstalar, haz tu respaldo** con Descargar respaldo, porque al desinstalar se borran los datos.
