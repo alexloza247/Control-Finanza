@@ -14,7 +14,17 @@ Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se com
 
 ![Advertencia al gastar más de lo disponible](screenshots/advertencia.jpg)
 
-> Las capturas de Movimientos, Calendario y Configuración están por actualizarse, porque esas pantallas cambiaron desde la versión anterior.
+![Movimientos: lista compacta con el ícono ↻ para repetir](screenshots/movimientos.jpg)
+
+![Buscar un movimiento por monto](screenshots/busqueda.jpg)
+
+![Calendario: totales del mes y leyenda](screenshots/calendario.jpg)
+
+![Notificaciones: interruptor maestro y recordatorios](screenshots/notificaciones.jpg)
+
+![Apariencia: modo y colores del tema](screenshots/apariencia.jpg)
+
+![Datos: respaldo por archivo e historial de ajustes](screenshots/datos.jpg)
 
 ## Resumen
 
