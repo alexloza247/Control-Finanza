@@ -12,7 +12,7 @@ Así se ve la app (con datos de ejemplo):
 
 ![Cuentas: efectivo, débito y crédito](screenshots/cuentas.jpg)
 
-![Movimientos con botón Repetir](screenshots/movimientos.jpg)
+![Movimientos con ícono Repetir](screenshots/movimientos.jpg)
 
 ![Búsqueda por monto en Movimientos](screenshots/busqueda.jpg)
 
@@ -52,7 +52,7 @@ Así se ve la app (con datos de ejemplo):
 - Editar y eliminar movimientos.
 - Cada movimiento muestra un ícono de lápiz (✎) para que se vea que se puede editar.
 - Buscador por nota, categoría, cuenta, monto y fecha ("500" encuentra el gasto de $500; "13/11", "13 nov" o "2026-11-13" encuentran los movimientos de ese día), y filtros por tipo (Todos, Ingresos, Gastos, Transferencias).
-- Cada movimiento tiene un botón **↻ Repetir** que abre el formulario prellenado con sus mismos datos (tipo, monto, cuenta, categoría, nota y términos MSI) pero con la fecha y hora de hoy; al guardar se crea un movimiento nuevo y el original no se toca. Repetir no copia la foto del ticket: cada compra tiene su propio ticket.
+- Cada movimiento tiene un ícono **↻ Repetir** junto al lápiz de editar, arriba a la derecha de su tarjeta, que abre el formulario prellenado con sus mismos datos (tipo, monto, cuenta, categoría, nota y términos MSI) pero con la fecha y hora de hoy; al guardar se crea un movimiento nuevo y el original no se toca. Repetir no copia la foto del ticket: cada compra tiene su propio ticket.
 - **Foto del ticket:** al crear o editar un movimiento se puede adjuntar la foto del ticket con dos botones: **📷 Tomar foto** (abre la cámara directo) y **🖼️ Elegir de la galería**; la foto se comprime en el teléfono antes de guardarse junto al movimiento, aparece como miniatura en la lista y se abre en grande al tocarla. Al editar se puede cambiar (con cualquiera de los dos botones) o quitar. Si el almacenamiento no alcanza para guardar con la foto, el movimiento se guarda sin ella antes que perderse. Para que la cámara se abra en Android 11+, el manifiesto de la app declara `<queries>` con el intent de captura de imagen (lo agrega `widget/scripts/install-widget.py` en el build); no hace falta el permiso de cámara porque el intent lo atiende la app de cámara del sistema. Al abrirla en grande, el botón **⬇️ Descargar** guarda la foto como `ticket-AAAA-MM-DD.jpg` (fecha del movimiento) en Descargas/Control de Finanzas en la app, o la descarga directo en el navegador.
 - Al guardar un movimiento aparece el aviso "Guardado".
 - Al crear una compra a MSI en tarjeta de crédito, el formulario muestra la mensualidad en vivo antes de guardar ("Mensualidad: $1,000.00 al mes · 12 pagos").

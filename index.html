@@ -114,6 +114,9 @@ input,select{width:100%;font:inherit;padding:11px;border-radius:10px;border:1px 
 .cleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
 a.lnk{color:var(--g);font-weight:600;background:none;border:0;font:inherit;padding:0}
 .ed{color:var(--mute2);font-size:15px;flex:none;margin-left:8px}
+/* Ícono de acción pequeño en las tarjetas (Repetir ↻ junto al lápiz):
+   solo el glifo, sin fondo ni borde; el padding da área táctil. */
+.ic{background:none;border:0;color:var(--mute2);font:inherit;font-size:16px;line-height:1;padding:4px 2px;flex:none;cursor:pointer}
 /* Animaciones (sutiles, 150-300 ms): las tarjetas aparecen con un
    desvanecido, los botones reaccionan al tocarlos, al cambiar de pestaña
    la vista se desliza, y los saldos y totales cuentan hasta su valor nuevo.
@@ -373,7 +376,7 @@ function cmp(a,b){if(a.date!==b.date)return a.date<b.date?1:-1;var ta=a.time||''
 function list(arr){return arr.map(function(t){
  var a=acc(t.acc),to=t.to?acc(t.to):null,sign=t.type==='income'?'pos':t.type==='expense'?'neg':'',pre=t.type==='income'?'+':t.type==='expense'?'-':'';
  var title=t.type==='transfer'?'Transferencia → '+esc(to?to.name:'?'):esc(t.note||t.cat||'Movimiento');
- return '<div class="item" data-act="edittx" data-id="'+t.id+'"><div class="row">'+(t.photo?'<button type="button" class="thumb" data-act="viewphoto" data-id="'+t.id+'" aria-label="Ver foto del ticket"><img src="'+t.photo+'" alt=""></button>':'')+'<div style="flex:1;min-width:0"><div class="t">'+title+'</div><div class="m">'+esc(a?a.name:'?')+' · '+t.date+(t.time?' · '+esc(t.time):'')+(t.type!=='transfer'&&t.cat?' · '+esc(t.cat):'')+(t.msi>1?' · '+t.msi+' MSI':'')+'</div></div><b class="'+sign+'">'+pre+money(t.amt)+'</b><span class="ed" aria-hidden="true">✎</span></div><div style="margin-top:8px;text-align:right"><button type="button" class="mini alt" data-act="repeattx" data-id="'+t.id+'">↻ Repetir</button></div></div>'}).join('')}
+ return '<div class="item" data-act="edittx" data-id="'+t.id+'"><div class="row">'+(t.photo?'<button type="button" class="thumb" data-act="viewphoto" data-id="'+t.id+'" aria-label="Ver foto del ticket"><img src="'+t.photo+'" alt=""></button>':'')+'<div style="flex:1;min-width:0"><div class="t">'+title+'</div><div class="m">'+esc(a?a.name:'?')+' · '+t.date+(t.time?' · '+esc(t.time):'')+(t.type!=='transfer'&&t.cat?' · '+esc(t.cat):'')+(t.msi>1?' · '+t.msi+' MSI':'')+'</div></div><b class="'+sign+'">'+pre+money(t.amt)+'</b><span class="ed" aria-hidden="true">✎</span><button type="button" class="ic" data-act="repeattx" data-id="'+t.id+'" aria-label="Repetir" title="Repetir">↻</button></div></div>'}).join('')}
 var MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 /* Búsqueda por monto: "500" encuentra el gasto de $500; "1,200" o "1200"
    encuentran $1,200. */
