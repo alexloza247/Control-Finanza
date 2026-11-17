@@ -58,9 +58,8 @@ jobs:
 
       - name: Update App Version
         run: |
-          APP_VER=$(node -p "require('./package.json').version")
           sed -i -E "s/(versionCode[[:space:]=]+)[0-9]+/\1${{ github.run_number }}/g" android/app/build.gradle*
-          sed -i -E "s/(versionName[[:space:]=]+)\"[^\"]+\"/\1\"$APP_VER\"/g" android/app/build.gradle*
+          sed -i -E "s/(versionName[[:space:]=]+)\"[^\"]+\"/\1\"1.0.${{ github.run_number }}\"/g" android/app/build.gradle*
           grep -E "version(Code|Name)" android/app/build.gradle*
 
       - name: Generate App Icons from icon.svg
