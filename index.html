@@ -46,8 +46,14 @@ h2{font-size:18px;margin:24px 0 10px;font-weight:800}
 .item.hasbar{padding-left:24px}
 /* Selector de color de la cuenta: botón compacto en el formulario que abre
    una mini ventana con el espectro, el código hexadecimal y la cuadrícula. */
-.csw{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-.cswb{width:30px;height:30px;border-radius:50%;border:0;padding:0;cursor:pointer}
+.csw{margin-top:4px}
+.cswgrid{display:grid;grid-template-columns:repeat(13,1fr);gap:2px}
+.cswg{aspect-ratio:1;border:0;padding:0;cursor:pointer;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.25)}
+.cswg.sel{box-shadow:0 0 0 2px var(--surf),0 0 0 4px var(--ink)}
+.cswbot{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.cswnone{display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;font:inherit;color:var(--ink);cursor:pointer}
+.cswnone.sel{font-weight:600}
+.cswb{width:26px;height:26px;border-radius:4px;border:0;padding:0;cursor:pointer;flex:none}
 .cswb.sel{box-shadow:0 0 0 2px var(--surf),0 0 0 4px var(--ink)}
 .chex{display:flex;gap:8px;align-items:center;margin-top:10px}
 .chex .prev{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);flex:none}
@@ -252,7 +258,11 @@ function acc(id){return S.accounts.filter(function(a){return a.id===id})[0]}
    elegido o null si no tiene; solo las cuentas con color muestran la
    barrita en Cuentas y en sus movimientos. */
 function hslHex(h,s,l){var c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs(((h/60)%2)-1)),m=l-c/2,r=0,g=0,b=0;if(h<60){r=c;g=x}else if(h<120){r=x;g=c}else if(h<180){g=c;b=x}else if(h<240){g=x;b=c}else if(h<300){r=x;b=c}else{r=c;b=x}function p(v){var n=Math.round((v+m)*255).toString(16).toUpperCase();return n.length<2?'0'+n:n}return '#'+p(r)+p(g)+p(b)}
-var COLOR_GRID=(function(){var out=[],L=[0.85,0.7,0.55,0.4,0.28,0.18];for(var li=0;li<L.length;li++)for(var hi=0;hi<12;hi++)out.push(hslHex(hi*30,0.75,L[li]));return out})();
+/* Cuadrícula de colores: 13 columnas × 9 filas = 117 colores. 12 columnas de
+   tono (0° a 330°) con saturación 100% y 9 niveles de claridad (de muy claro a
+   muy oscuro); la columna 13 es la escala de grises (blanco arriba, negro
+   abajo). Se genera con hslHex, no se escriben los 117 hex a mano. */
+var COLOR_GRID=(function(){var out=[],L=[0.92,0.85,0.75,0.65,0.55,0.45,0.35,0.25,0.15],GL=[1,0.875,0.75,0.625,0.5,0.375,0.25,0.125,0];for(var r=0;r<9;r++){for(var hi=0;hi<12;hi++)out.push(hslHex(hi*30,1,L[r]));out.push(hslHex(0,0,GL[r]))}return out})();
 function normalizeHex(v){if(v==null)return null;var s=String(v).trim();if(s.charAt(0)==='#')s=s.slice(1);if(!/^[0-9a-fA-F]{6}$/.test(s))return null;return '#'+s.toUpperCase()}
 /* Espectro de colores (selector propio): fx=tono (0..1 → 0..360°),
    fy=claridad (0 blanco, 0.5 tono puro, 1 negro). specColorAt convierte una
@@ -558,10 +568,10 @@ function openColorPicker(opts){
  h+='<div class="csw" id="f_csw"></div>';
  h+='<button class="btn" id="col_done" style="margin-top:12px">Listo</button></div></div>';
  $('colpick').innerHTML=h;
- function cswHtml(){var h='';if(allowNone)h+='<button type="button" class="cswb none'+(!cur?' sel':'')+'" data-c="" title="Sin color" aria-label="Sin color" style="background:linear-gradient(135deg,transparent 45%,#9CA3AF 45%,#9CA3AF 55%,transparent 55%),var(--surf);border:1px solid var(--line)"></button>';var inGrid=false;if(cur){for(var i=0;i<COLOR_GRID.length;i++)if(COLOR_GRID[i].toLowerCase()===cur.toLowerCase()){inGrid=true;break}}if(cur&&!inGrid)h+='<button type="button" class="cswb sel" data-c="'+esc(cur)+'" style="background:'+esc(cur)+'" aria-label="Color actual"></button>';h+=COLOR_GRID.map(function(c){return '<button type="button" class="cswb'+(cur&&c.toLowerCase()===cur.toLowerCase()?' sel':'')+'" data-c="'+c+'" style="background:'+c+'" aria-label="Color"></button>'}).join('');return h}
+ function cswHtml(){var inGrid=false;if(cur){for(var i=0;i<COLOR_GRID.length;i++)if(COLOR_GRID[i].toLowerCase()===cur.toLowerCase()){inGrid=true;break}}var grid=COLOR_GRID.map(function(c){return '<button type="button" class="cswg'+(cur&&c.toLowerCase()===cur.toLowerCase()?' sel':'')+'" data-c="'+c+'" style="background:'+c+'" aria-label="Color"></button>'}).join('');var bot='';if(allowNone)bot+='<button type="button" class="cswnone'+(!cur?' sel':'')+'" data-c="" title="Sin color" aria-label="Sin color"><span class="cswb none" style="background:linear-gradient(135deg,transparent 45%,#9CA3AF 45%,#9CA3AF 55%,transparent 55%),var(--surf);border:1px solid var(--line)"></span>Sin color</button>';if(cur&&!inGrid)bot+='<button type="button" class="cswb sel" data-c="'+esc(cur)+'" style="background:'+esc(cur)+'" aria-label="Color actual"></button>';return '<div class="cswgrid">'+grid+'</div>'+(bot?'<div class="cswbot">'+bot+'</div>':'')}
  function syncUI(light){var csw=$('f_csw');if(csw&&!light)csw.innerHTML=cswHtml();var pr=$('f_cprev');if(pr)pr.style.background=cur||'transparent';var hx=$('f_hex');if(hx&&hx.value!==(cur||''))hx.value=cur||'';var mk=$('f_cmark');if(mk){var p=cur?specPosForHex(cur):null;if(p){mk.style.display='block';mk.style.left=(p.x*100)+'%';mk.style.top=(p.y*100)+'%'}else mk.style.display='none'}}
  function setPicked(hex,light){cur=hex;syncUI(light);if(live)onPick(cur)}
- var csw=$('f_csw');if(csw)csw.onclick=function(e){var t=e.target;if(!t||!t.getAttribute)return;var b=t.getAttribute('data-c');if(b===null)return;setPicked(b)};
+ var csw=$('f_csw');if(csw)csw.onclick=function(e){var t=e.target;while(t&&t!==csw&&!(t.getAttribute&&t.getAttribute('data-c')!==null))t=t.parentNode;if(!t||t===csw)return;setPicked(t.getAttribute('data-c'))};
  var hexEl=$('f_hex');if(hexEl){hexEl.oninput=function(){var n=normalizeHex(hexEl.value);if(n){setPicked(n);hexEl.classList.remove('field-missing')}else if(hexEl.value.trim()===''){setPicked('')}else{hexEl.classList.add('field-missing')}};hexEl.onchange=function(){if(!normalizeHex(hexEl.value)){hexEl.value=cur||'';hexEl.classList.remove('field-missing')}}}
  var spec=$('f_cspec');
  if(spec){function specFrac(e){var r=spec.getBoundingClientRect();if(r.width>0&&r.height>0)return[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height];return null}
