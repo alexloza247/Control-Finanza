@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Pestana Saldo: saldo grande y dos columnas (Deuda/Puedes gastar a la
+     izquierda, Mes con ingreso/gasto a la derecha). Estructura identica a
+     las filas que funcionan (widget_row_bill / widget_row_chips): raiz
+     vertical, una fila horizontal con dos TextView con peso, sin View ni
+     columnas anidadas. El texto de cada columna va en un solo TextView
+     (con colores por tramo via SpannableString en el Java). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:gravity="center_vertical"
     android:orientation="vertical">
 
     <TextView
@@ -17,113 +24,29 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <LinearLayout
-            android:id="@+id/col_left"
+        <TextView
+            android:id="@+id/row_saldo_left"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="#14211F"
+            android:textSize="14sp" />
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/row_saldo_debt_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:text="Deuda:"
-                    android:textColor="#5E6E6B"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/row_saldo_debt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:textColor="#14211F"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/row_saldo_free_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:text="Puedes gastar:"
-                    android:textColor="#5E6E6B"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/row_saldo_free"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:textColor="#14211F"
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <View
-            android:id="@+id/row_saldo_divider"
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
+        <TextView
+            android:id="@+id/row_saldo_right"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:background="#DCE4E2" />
-
-        <LinearLayout
-            android:id="@+id/col_right"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:ellipsize="end"
             android:gravity="end"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/row_saldo_month_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:maxLines="1"
-                android:text="Mes"
-                android:textColor="#5E6E6B"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/row_saldo_inc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#1F7A5C"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/row_saldo_exp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#C62828"
-                android:textSize="14sp" />
-        </LinearLayout>
+            android:maxLines="3"
+            android:textColor="#14211F"
+            android:textSize="14sp" />
     </LinearLayout>
 </LinearLayout>

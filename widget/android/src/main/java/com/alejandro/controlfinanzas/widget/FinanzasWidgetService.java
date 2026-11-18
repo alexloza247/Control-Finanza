@@ -12,6 +12,9 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -248,27 +251,51 @@ public class FinanzasWidgetService extends RemoteViewsService {
         private RemoteViews saldoViews(String pkg, JSONObject snap,
                                        FinanzasWidgetProvider.Theme theme, boolean themed) {
             RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_saldo);
+            int ink = (themed && theme != null) ? theme.ink : 0xFF14211F;
+            int muted = (themed && theme != null) ? theme.muted : 0xFF5E6E6B;
             row.setTextViewText(R.id.row_saldo_amount,
                     FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "avail")));
-            row.setTextViewText(R.id.row_saldo_debt,
-                    FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "debt")));
-            row.setTextViewText(R.id.row_saldo_free,
-                    FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "free")));
-            row.setTextViewText(R.id.row_saldo_inc,
-                    "+" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthInc")));
-            row.setTextViewText(R.id.row_saldo_exp,
-                    "−" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthExp")));
+            // Columna izquierda en UN solo TextView (estructura identica a
+            // las filas que funcionan: pesos solo en TextView, profundidad
+            // 3, sin View ni columnas anidadas): "Deuda: $X" en la primera
+            // linea y "Puedes gastar: $Y" en la segunda, con etiquetas
+            // apagadas y montos principales (colores por tramo via
+            // SpannableString, tecnica soportada por RemoteViews).
+            String debtTxt = FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "debt"));
+            String freeTxt = FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "free"));
+            String leftPlain = "Deuda: " + debtTxt + "\nPuedes gastar: " + freeTxt;
+            SpannableString left = new SpannableString(leftPlain);
+            int debtValStart = "Deuda: ".length();
+            int nl = leftPlain.indexOf('\n');
+            int freeLabelStart = nl + 1;
+            int freeValStart = freeLabelStart + "Puedes gastar: ".length();
+            left.setSpan(new ForegroundColorSpan(muted), 0, debtValStart,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            left.setSpan(new ForegroundColorSpan(ink), debtValStart,
+                    debtValStart + debtTxt.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            left.setSpan(new ForegroundColorSpan(muted), freeLabelStart, freeValStart,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            left.setSpan(new ForegroundColorSpan(ink), freeValStart, leftPlain.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            row.setTextViewText(R.id.row_saldo_left, left);
+            // Columna derecha: "Mes" / ingreso verde / gasto rojo, un color
+            // por linea en el mismo TextView.
+            String incTxt = "+" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthInc"));
+            String expTxt = "−" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthExp"));
+            String rightPlain = "Mes\n" + incTxt + "\n" + expTxt;
+            SpannableString right = new SpannableString(rightPlain);
+            int incStart = "Mes\n".length();
+            int expStart = incStart + incTxt.length() + 1;
+            right.setSpan(new ForegroundColorSpan(muted), 0, 3,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.GREEN), incStart,
+                    incStart + incTxt.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.RED), expStart,
+                    rightPlain.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            row.setTextViewText(R.id.row_saldo_right, right);
             if (themed && theme != null) {
                 try {
                     row.setTextColor(R.id.row_saldo_amount, theme.ink);
-                    row.setTextColor(R.id.row_saldo_debt_label, theme.muted);
-                    row.setTextColor(R.id.row_saldo_debt, theme.ink);
-                    row.setTextColor(R.id.row_saldo_free_label, theme.muted);
-                    row.setTextColor(R.id.row_saldo_free, theme.ink);
-                    row.setTextColor(R.id.row_saldo_month_label, theme.muted);
-                    row.setTextColor(R.id.row_saldo_inc, FinanzasWidgetProvider.GREEN);
-                    row.setTextColor(R.id.row_saldo_exp, FinanzasWidgetProvider.RED);
-                    row.setInt(R.id.row_saldo_divider, "setBackgroundColor", theme.divider);
                 } catch (Exception ignored) {
                 }
             }
