@@ -44,7 +44,14 @@ public class FinanzasWidgetService extends RemoteViewsService {
 
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
-        return new WidgetFactory(getApplicationContext());
+        try {
+            return new WidgetFactory(getApplicationContext());
+        } catch (Exception e) {
+            // Ultimo recurso: una fabrica vacia que igual devuelve un aviso
+            // (getCount nunca es 0 y getViewAt nunca devuelve null sin
+            // intentar el aviso), para no dejar "Cargando..." eterno.
+            return new WidgetFactory(getApplicationContext());
+        }
     }
 
     static final int TYPE_SALDO = 0;
@@ -73,22 +80,35 @@ public class FinanzasWidgetService extends RemoteViewsService {
 
         @Override
         public void onCreate() {
-            reload();
+            try {
+                reload();
+            } catch (Exception e) {
+                ensureFallback();
+            }
         }
 
         @Override
         public void onDataSetChanged() {
-            reload();
+            try {
+                reload();
+            } catch (Exception e) {
+                ensureFallback();
+            }
         }
 
         @Override
         public void onDestroy() {
-            items.clear();
+            try {
+                items.clear();
+            } catch (Exception ignored) {
+            }
         }
 
         @Override
         public int getCount() {
-            return items.size();
+            // NUNCA 0: con 0 el ListView del widget se queda en
+            // "Cargando..." para siempre. Si algo fallo, hay 1 aviso.
+            return items.isEmpty() ? 1 : items.size();
         }
 
         @Override
@@ -108,38 +128,106 @@ public class FinanzasWidgetService extends RemoteViewsService {
 
         @Override
         public RemoteViews getViewAt(int position) {
-            if (position < 0 || position >= items.size()) return null;
-            return items.get(position).views;
+            try {
+                if (position < 0 || position >= items.size()) {
+                    return fallbackViews();
+                }
+                RemoteViews v = items.get(position).views;
+                return v != null ? v : fallbackViews();
+            } catch (Exception e) {
+                return fallbackViews();
+            }
         }
 
         @Override
         public RemoteViews getLoadingView() {
-            return null;
+            // Vista de carga real (no null): si la fabrica tarda, se ve el
+            // aviso en vez de "Cargando..." sin fin.
+            return fallbackViews();
+        }
+
+        private RemoteViews fallbackViews() {
+            try {
+                String pkg = ctx.getPackageName();
+                return noteViews(pkg, null, false, 999,
+                        "Abre la app para cargar tus datos", FinanzasWidgetProvider.DEEP_LINK + "home");
+            } catch (Exception e) {
+                try {
+                    return new RemoteViews(ctx.getPackageName(), R.layout.widget_row_note);
+                } catch (Exception e2) {
+                    return null;
+                }
+            }
+        }
+
+        private void ensureFallback() {
+            if (!items.isEmpty()) return;
+            RemoteViews v = fallbackViews();
+            if (v != null) items.add(new Item(TYPE_NOTE, v));
+        }
+
+        private static double safeDouble(JSONObject o, String key) {
+            try {
+                return o == null ? 0 : o.optDouble(key, 0);
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+
+        private static int safeInt(JSONObject o, String key) {
+            try {
+                return o == null ? 0 : o.optInt(key, 0);
+            } catch (Exception e) {
+                return 0;
+            }
+        }
+
+        private static String safeString(JSONObject o, String key) {
+            try {
+                return o == null ? "" : o.optString(key, "");
+            } catch (Exception e) {
+                return "";
+            }
         }
 
         private void reload() {
-            items.clear();
+            try {
+                items.clear();
+            } catch (Exception ignored) {
+            }
             try {
                 doReload();
             } catch (Exception e) {
                 // Nunca dejar el widget en "Cargando...": si algo falla al armar
                 // el contenido, mostrar el aviso en vez de dejar la lista vacia.
-                items.clear();
                 try {
-                    String pkg = ctx.getPackageName();
-                    items.add(new Item(TYPE_NOTE, noteViews(pkg, null, false, 900,
-                            "Abre la app para cargar tus datos", FinanzasWidgetProvider.DEEP_LINK + "home")));
+                    items.clear();
                 } catch (Exception ignored) {
                 }
+                ensureFallback();
             }
+            ensureFallback();
         }
 
         private void doReload() {
-            int tab = ctx.getSharedPreferences(FinanzasWidgetProvider.WIDGET_PREFS, Context.MODE_PRIVATE)
-                    .getInt(FinanzasWidgetProvider.KEY_TAB, FinanzasWidgetProvider.TAB_SALDO);
-            JSONObject snap = FinanzasWidgetProvider.readSnapshot(ctx);
-            FinanzasWidgetProvider.Theme theme = FinanzasWidgetProvider.resolveTheme(ctx, snap);
-            boolean themed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+            int tab = FinanzasWidgetProvider.TAB_SALDO;
+            try {
+                tab = ctx.getSharedPreferences(FinanzasWidgetProvider.WIDGET_PREFS, Context.MODE_PRIVATE)
+                        .getInt(FinanzasWidgetProvider.KEY_TAB, FinanzasWidgetProvider.TAB_SALDO);
+            } catch (Exception ignored) {
+            }
+            JSONObject snap = null;
+            try {
+                snap = FinanzasWidgetProvider.readSnapshot(ctx);
+            } catch (Exception ignored) {
+            }
+            FinanzasWidgetProvider.Theme theme;
+            try {
+                theme = FinanzasWidgetProvider.resolveTheme(ctx, snap);
+            } catch (Exception e) {
+                theme = null;
+            }
+            boolean themed = theme != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
             String pkg = ctx.getPackageName();
             if (snap == null) {
                 items.add(new Item(TYPE_NOTE, noteViews(pkg, theme, themed, 900,
@@ -161,25 +249,28 @@ public class FinanzasWidgetService extends RemoteViewsService {
                                        FinanzasWidgetProvider.Theme theme, boolean themed) {
             RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_saldo);
             row.setTextViewText(R.id.row_saldo_amount,
-                    FinanzasWidgetProvider.fmtMoney(snap.optDouble("avail", 0)));
+                    FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "avail")));
             row.setTextViewText(R.id.row_saldo_debt,
-                    FinanzasWidgetProvider.fmtMoney(snap.optDouble("debt", 0)));
+                    FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "debt")));
             row.setTextViewText(R.id.row_saldo_free,
-                    FinanzasWidgetProvider.fmtMoney(snap.optDouble("free", 0)));
+                    FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "free")));
             row.setTextViewText(R.id.row_saldo_inc,
-                    "+" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthInc", 0)));
+                    "+" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthInc")));
             row.setTextViewText(R.id.row_saldo_exp,
-                    "−" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthExp", 0)));
-            if (themed) {
-                row.setTextColor(R.id.row_saldo_amount, theme.ink);
-                row.setTextColor(R.id.row_saldo_debt_label, theme.muted);
-                row.setTextColor(R.id.row_saldo_debt, theme.ink);
-                row.setTextColor(R.id.row_saldo_free_label, theme.muted);
-                row.setTextColor(R.id.row_saldo_free, theme.ink);
-                row.setTextColor(R.id.row_saldo_month_label, theme.muted);
-                row.setTextColor(R.id.row_saldo_inc, FinanzasWidgetProvider.GREEN);
-                row.setTextColor(R.id.row_saldo_exp, FinanzasWidgetProvider.RED);
-                row.setInt(R.id.row_saldo_divider, "setBackgroundColor", theme.divider);
+                    "−" + FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "monthExp")));
+            if (themed && theme != null) {
+                try {
+                    row.setTextColor(R.id.row_saldo_amount, theme.ink);
+                    row.setTextColor(R.id.row_saldo_debt_label, theme.muted);
+                    row.setTextColor(R.id.row_saldo_debt, theme.ink);
+                    row.setTextColor(R.id.row_saldo_free_label, theme.muted);
+                    row.setTextColor(R.id.row_saldo_free, theme.ink);
+                    row.setTextColor(R.id.row_saldo_month_label, theme.muted);
+                    row.setTextColor(R.id.row_saldo_inc, FinanzasWidgetProvider.GREEN);
+                    row.setTextColor(R.id.row_saldo_exp, FinanzasWidgetProvider.RED);
+                    row.setInt(R.id.row_saldo_divider, "setBackgroundColor", theme.divider);
+                } catch (Exception ignored) {
+                }
             }
             return row;
         }
@@ -194,27 +285,33 @@ public class FinanzasWidgetService extends RemoteViewsService {
             }
             int shown = 0;
             for (int i = 0; i < bills.length() && shown < FinanzasWidgetProvider.MAX_BILLS; i++) {
-                JSONObject b = bills.optJSONObject(i);
-                if (b == null) continue;
-                RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_bill);
-                row.setTextViewText(R.id.row_bill_name, b.optString("name", ""));
-                row.setTextViewText(R.id.row_bill_amt,
-                        FinanzasWidgetProvider.fmtMoney(b.optDouble("amt", 0)));
-                // "vence hoy" / "vencido hace..." en su propia segunda
-                // linea, para que el nombre y el monto no se corten.
-                row.setTextViewText(R.id.row_bill_due,
-                        FinanzasWidgetProvider.daysLabel(b.optInt("days", 0)));
-                if (themed) {
-                    FinanzasWidgetProvider.tintBackground(row, R.id.row_bill_root, theme.surface);
-                    row.setTextColor(R.id.row_bill_name, theme.ink);
-                    row.setTextColor(R.id.row_bill_amt, theme.ink);
-                    row.setTextColor(R.id.row_bill_due, theme.muted);
+                try {
+                    JSONObject b = bills.optJSONObject(i);
+                    if (b == null) continue;
+                    RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_bill);
+                    row.setTextViewText(R.id.row_bill_name, safeString(b, "name"));
+                    row.setTextViewText(R.id.row_bill_amt,
+                            FinanzasWidgetProvider.fmtMoney(safeDouble(b, "amt")));
+                    // "vence hoy" / "vencido hace..." en su propia segunda
+                    // linea, para que el nombre y el monto no se corten.
+                    row.setTextViewText(R.id.row_bill_due,
+                            FinanzasWidgetProvider.daysLabel(safeInt(b, "days")));
+                    if (themed && theme != null) {
+                        try {
+                            FinanzasWidgetProvider.tintBackground(row, R.id.row_bill_root, theme.surface);
+                            row.setTextColor(R.id.row_bill_name, theme.ink);
+                            row.setTextColor(R.id.row_bill_amt, theme.ink);
+                            row.setTextColor(R.id.row_bill_due, theme.muted);
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    row.setOnClickFillInIntent(R.id.row_bill_root,
+                            fillIntent(FinanzasWidgetProvider.DEEP_LINK + "paybill?id="
+                                    + Uri.encode(safeString(b, "id"))));
+                    items.add(new Item(TYPE_BILL, row));
+                    shown++;
+                } catch (Exception ignored) {
                 }
-                row.setOnClickFillInIntent(R.id.row_bill_root,
-                        fillIntent(FinanzasWidgetProvider.DEEP_LINK + "paybill?id="
-                                + Uri.encode(b.optString("id", ""))));
-                items.add(new Item(TYPE_BILL, row));
-                shown++;
             }
             if (bills.length() > FinanzasWidgetProvider.MAX_BILLS) {
                 items.add(new Item(TYPE_NOTE, noteViews(pkg, theme, themed, 902,
@@ -235,12 +332,19 @@ public class FinanzasWidgetService extends RemoteViewsService {
                     fillIntent(FinanzasWidgetProvider.DEEP_LINK + "newtx?type=" + type));
             items.add(new Item(TYPE_ACTION, action));
 
-            org.json.JSONArray presets = snap.optJSONArray("presets");
+            org.json.JSONArray presets = null;
+            try {
+                presets = snap.optJSONArray("presets");
+            } catch (Exception ignored) {
+            }
             java.util.List<JSONObject> mine = new java.util.ArrayList<>();
             if (presets != null) {
                 for (int i = 0; i < presets.length(); i++) {
-                    JSONObject p = presets.optJSONObject(i);
-                    if (p != null && type.equals(p.optString("type"))) mine.add(p);
+                    try {
+                        JSONObject p = presets.optJSONObject(i);
+                        if (p != null && type.equals(safeString(p, "type"))) mine.add(p);
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             if (mine.isEmpty()) {
@@ -270,15 +374,15 @@ public class FinanzasWidgetService extends RemoteViewsService {
                     // (salto explicito, no un corte al azar): con el
                     // lineSpacingExtra del chip las dos lineas ya no se
                     // ven empalmadas.
-                    String txt = sign + " " + p.optString("name", "");
-                    if (p.optDouble("amt", 0) > 0) {
-                        txt += "\n" + FinanzasWidgetProvider.fmtMoney(p.optDouble("amt", 0));
+                    String txt = sign + " " + safeString(p, "name");
+                    if (safeDouble(p, "amt") > 0) {
+                        txt += "\n" + FinanzasWidgetProvider.fmtMoney(safeDouble(p, "amt"));
                     }
                     chips.setTextViewText(chipIds[i], txt);
                     chips.setViewVisibility(chipIds[i], View.VISIBLE);
                     chips.setOnClickFillInIntent(chipIds[i],
                             fillIntent(FinanzasWidgetProvider.DEEP_LINK + "usepre?id="
-                                    + Uri.encode(p.optString("id", ""))));
+                                    + Uri.encode(safeString(p, "id"))));
                     if (themed) FinanzasWidgetProvider.themeChip(chips, chipIds[i], theme);
                 } else if (i == mine.size() && mine.size() < FinanzasWidgetProvider.MAX_CHIPS) {
                     chips.setTextViewText(chipIds[i], "＋ Nuevo");
@@ -297,8 +401,11 @@ public class FinanzasWidgetService extends RemoteViewsService {
                                       int code, String text, String url) {
             RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_note);
             row.setTextViewText(R.id.row_note_text, text);
-            if (themed) {
-                row.setTextColor(R.id.row_note_text, theme.muted);
+            if (themed && theme != null) {
+                try {
+                    row.setTextColor(R.id.row_note_text, theme.muted);
+                } catch (Exception ignored) {
+                }
             }
             row.setOnClickFillInIntent(R.id.row_note_root, fillIntent(url));
             return row;

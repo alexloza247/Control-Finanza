@@ -126,36 +126,56 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
             new SharedPreferences.OnSharedPreferenceChangeListener() {
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-                    if (!KEY_SNAPSHOT.equals(key) || appContext == null) return;
-                    AppWidgetManager mgr = AppWidgetManager.getInstance(appContext);
-                    ComponentName cn = new ComponentName(appContext, FinanzasWidgetProvider.class);
-                    for (int id : mgr.getAppWidgetIds(cn)) {
-                        mgr.updateAppWidget(id, buildViews(appContext, id));
-                        mgr.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+                    try {
+                        if (!KEY_SNAPSHOT.equals(key) || appContext == null) return;
+                        AppWidgetManager mgr = AppWidgetManager.getInstance(appContext);
+                        ComponentName cn = new ComponentName(appContext, FinanzasWidgetProvider.class);
+                        for (int id : mgr.getAppWidgetIds(cn)) {
+                            try {
+                                mgr.updateAppWidget(id, buildViews(appContext, id));
+                                mgr.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    } catch (Exception ignored) {
                     }
                 }
             };
 
     private static void ensureSnapshotListener(Context context) {
-        appContext = context.getApplicationContext();
-        if (listenerRegistered) return;
-        listenerRegistered = true;
-        appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
-                .registerOnSharedPreferenceChangeListener(snapshotListener);
+        try {
+            if (context == null) return;
+            appContext = context.getApplicationContext();
+            if (listenerRegistered) return;
+            appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                    .registerOnSharedPreferenceChangeListener(snapshotListener);
+            listenerRegistered = true;
+        } catch (Exception e) {
+            listenerRegistered = false;
+        }
     }
 
     @Override
     public void onEnabled(Context context) {
-        super.onEnabled(context);
+        try {
+            super.onEnabled(context);
+        } catch (Exception ignored) {
+        }
         ensureSnapshotListener(context);
     }
 
     @Override
     public void onDisabled(Context context) {
-        super.onDisabled(context);
-        if (appContext != null) {
-            appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
-                    .unregisterOnSharedPreferenceChangeListener(snapshotListener);
+        try {
+            super.onDisabled(context);
+        } catch (Exception ignored) {
+        }
+        try {
+            if (appContext != null) {
+                appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                        .unregisterOnSharedPreferenceChangeListener(snapshotListener);
+            }
+        } catch (Exception ignored) {
         }
         listenerRegistered = false;
     }
@@ -163,15 +183,31 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         ensureSnapshotListener(context);
+        if (appWidgetIds == null) return;
         for (int id : appWidgetIds) {
-            appWidgetManager.updateAppWidget(id, buildViews(context, id));
-            appWidgetManager.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+            try {
+                appWidgetManager.updateAppWidget(id, buildViews(context, id));
+                appWidgetManager.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+            } catch (Exception ignored) {
+            }
         }
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        try {
+            onReceiveGuarded(context, intent);
+        } catch (Exception e) {
+            try {
+                super.onReceive(context, intent);
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
+    private void onReceiveGuarded(Context context, Intent intent) {
         ensureSnapshotListener(context);
+        if (intent == null) return;
         if (ACTION_WIDGET_LINK.equals(intent.getAction())) {
             String url = intent.getStringExtra(EXTRA_LINK_URL);
             if (url == null || url.isEmpty()) {
@@ -206,13 +242,19 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         }
         if (ACTION_TAB.equals(intent.getAction())) {
             int tab = intent.getIntExtra(EXTRA_TAB, TAB_SALDO);
-            context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
-                    .edit().putInt(KEY_TAB, tab).apply();
+            try {
+                context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
+                        .edit().putInt(KEY_TAB, tab).apply();
+            } catch (Exception ignored) {
+            }
             AppWidgetManager mgr = AppWidgetManager.getInstance(context);
             ComponentName cn = new ComponentName(context, FinanzasWidgetProvider.class);
             for (int id : mgr.getAppWidgetIds(cn)) {
-                mgr.updateAppWidget(id, buildViews(context, id));
-                mgr.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+                try {
+                    mgr.updateAppWidget(id, buildViews(context, id));
+                    mgr.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+                } catch (Exception ignored) {
+                }
             }
             return;
         }
@@ -220,33 +262,92 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     }
 
     private static RemoteViews buildViews(Context context, int appWidgetId) {
+        try {
+            return buildViewsGuarded(context, appWidgetId);
+        } catch (Exception e) {
+            return fallbackViews(context, appWidgetId);
+        }
+    }
+
+    private static RemoteViews fallbackViews(Context context, int appWidgetId) {
+        try {
+            String pkg = context.getPackageName();
+            RemoteViews views = new RemoteViews(pkg, R.layout.widget_finanzas);
+            try {
+                Intent svc = new Intent(context, FinanzasWidgetService.class);
+                svc.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+                svc.setData(Uri.parse(svc.toUri(Intent.URI_INTENT_SCHEME)));
+                views.setRemoteAdapter(R.id.widget_content, svc);
+                Intent tpl = new Intent(context, FinanzasWidgetProvider.class);
+                tpl.setAction(ACTION_WIDGET_LINK);
+                PendingIntent tplPi = PendingIntent.getBroadcast(context, 950, tpl,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+                views.setPendingIntentTemplate(R.id.widget_content, tplPi);
+            } catch (Exception ignored) {
+            }
+            return views;
+        } catch (Exception e) {
+            try {
+                return new RemoteViews(context.getPackageName(), R.layout.widget_finanzas);
+            } catch (Exception e2) {
+                return null;
+            }
+        }
+    }
+
+    private static RemoteViews buildViewsGuarded(Context context, int appWidgetId) {
         String pkg = context.getPackageName();
-        int tab = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
-                .getInt(KEY_TAB, TAB_SALDO);
-        JSONObject snap = readSnapshot(context);
-        Theme theme = resolveTheme(context, snap);
+        int tab = TAB_SALDO;
+        try {
+            tab = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
+                    .getInt(KEY_TAB, TAB_SALDO);
+        } catch (Exception ignored) {
+        }
+        JSONObject snap = null;
+        try {
+            snap = readSnapshot(context);
+        } catch (Exception ignored) {
+        }
+        Theme theme = null;
+        try {
+            theme = resolveTheme(context, snap);
+        } catch (Exception ignored) {
+        }
         // Color de fondo del widget elegido en Configuracion > Apariencia
         // (snapshot.widgetBg): si esta, manda sobre el fondo del tema.
-        Integer widgetBg = parseColorOrNull(snap == null ? null : snap.optString("widgetBg", null));
+        Integer widgetBg = null;
+        try {
+            widgetBg = parseColorOrNull(snap == null ? null : snap.optString("widgetBg", null));
+        } catch (Exception ignored) {
+        }
         // El tinte de fondos (setBackgroundTintList) solo existe en
         // RemoteViews desde API 31. En versiones viejas se mantiene el
         // aspecto fijo de siempre (sin tema), para no romper nada.
-        boolean themed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
+        boolean themed = theme != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
         RemoteViews views = new RemoteViews(pkg, R.layout.widget_finanzas);
         if (themed) {
-            tintBackground(views, R.id.widget_root, widgetBg != null ? widgetBg : theme.bg);
+            try {
+                tintBackground(views, R.id.widget_root, widgetBg != null ? widgetBg : theme.bg);
+            } catch (Exception ignored) {
+            }
         }
         for (int i = 0; i < TAB_BUTTONS.length; i++) {
-            views.setInt(TAB_BUTTONS[i], "setBackgroundResource",
-                    i == tab ? R.drawable.widget_tab_selected : 0);
-            if (themed) {
-                views.setInt(TAB_BUTTONS[i], "setColorFilter",
-                        i == tab ? theme.primary : theme.muted);
-                if (i == tab) {
-                    tintBackground(views, TAB_BUTTONS[i], theme.tabSelected);
+            try {
+                views.setInt(TAB_BUTTONS[i], "setBackgroundResource",
+                        i == tab ? R.drawable.widget_tab_selected : 0);
+                if (themed) {
+                    try {
+                        views.setInt(TAB_BUTTONS[i], "setColorFilter",
+                                i == tab ? theme.primary : theme.muted);
+                        if (i == tab) {
+                            tintBackground(views, TAB_BUTTONS[i], theme.tabSelected);
+                        }
+                    } catch (Exception ignored) {
+                    }
                 }
+                views.setOnClickPendingIntent(TAB_BUTTONS[i], tabIntent(context, i));
+            } catch (Exception ignored) {
             }
-            views.setOnClickPendingIntent(TAB_BUTTONS[i], tabIntent(context, i));
         }
         // Contenido desplazable: la lista la alimenta FinanzasWidgetService.
         // El intent lleva un data unico por widget para que el sistema no
@@ -286,8 +387,12 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
 
     /** Un atajo (chip): fondo de superficie del tema y texto principal. */
     static void themeChip(RemoteViews chips, int chipId, Theme theme) {
-        tintBackground(chips, chipId, theme.surface);
-        chips.setTextColor(chipId, theme.ink);
+        try {
+            if (theme == null) return;
+            tintBackground(chips, chipId, theme.surface);
+            chips.setTextColor(chipId, theme.ink);
+        } catch (Exception ignored) {
+        }
     }
 
     /**
@@ -313,11 +418,16 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     }
 
     static Theme resolveTheme(Context context, JSONObject snap) {
-        JSONObject t = snap == null ? null : snap.optJSONObject("theme");
-        int primary = parseColor(t == null ? null : t.optString("primary", null), THEME_PRIMARY);
-        int secondary = parseColor(t == null ? null : t.optString("secondary", null), THEME_SECONDARY);
-        int bgCustom = parseColor(t == null ? null : t.optString("background", null), THEME_BG_LIGHT);
-        String mode = t == null ? "auto" : t.optString("mode", "auto");
+        try {
+            JSONObject t = null;
+            try {
+                t = snap == null ? null : snap.optJSONObject("theme");
+            } catch (Exception ignored) {
+            }
+            int primary = parseColor(t == null ? null : t.optString("primary", null), THEME_PRIMARY);
+            int secondary = parseColor(t == null ? null : t.optString("secondary", null), THEME_SECONDARY);
+            int bgCustom = parseColor(t == null ? null : t.optString("background", null), THEME_BG_LIGHT);
+            String mode = t == null ? "auto" : t.optString("mode", "auto");
         boolean dark;
         if ("dark".equals(mode)) {
             dark = true;
@@ -332,14 +442,22 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         int muted = dark ? DARK_MUTED : LIGHT_MUTED;
         int tabSelected = dark ? blend(DARK_SURFACE, primary, 0.35f)
                 : blend(bgCustom, primary, 0.18f);
-        int divider = blend(muted, bg, 0.5f);
-        return new Theme(bg, surface, ink, muted, primary, secondary, tabSelected, divider);
+            int divider = blend(muted, bg, 0.5f);
+            return new Theme(bg, surface, ink, muted, primary, secondary, tabSelected, divider);
+        } catch (Exception e) {
+            return new Theme(THEME_BG_LIGHT, THEME_BG_LIGHT, LIGHT_INK, LIGHT_MUTED,
+                    THEME_PRIMARY, THEME_SECONDARY, THEME_BG_LIGHT, LIGHT_MUTED);
+        }
     }
 
     private static boolean isNightMode(Context context) {
-        int night = context.getResources().getConfiguration().uiMode
-                & Configuration.UI_MODE_NIGHT_MASK;
-        return night == Configuration.UI_MODE_NIGHT_YES;
+        try {
+            int night = context.getResources().getConfiguration().uiMode
+                    & Configuration.UI_MODE_NIGHT_MASK;
+            return night == Configuration.UI_MODE_NIGHT_YES;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static int parseColor(String hex, int fallback) {
@@ -376,7 +494,10 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
      * en RemoteViews en versiones viejas.
      */
     static void tintBackground(RemoteViews views, int viewId, int color) {
-        views.setColorStateList(viewId, "setBackgroundTintList", ColorStateList.valueOf(color));
+        try {
+            views.setColorStateList(viewId, "setBackgroundTintList", ColorStateList.valueOf(color));
+        } catch (Exception ignored) {
+        }
     }
 
     static JSONObject readSnapshot(Context context) {
@@ -400,17 +521,25 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
 
     /** Igual que money() en la app: $1,234.56, negativos como -$1.00. */
     static String fmtMoney(double v) {
-        boolean neg = v < 0;
-        DecimalFormat df = new DecimalFormat("#,##0.00",
-                DecimalFormatSymbols.getInstance(Locale.US));
-        return (neg ? "-$" : "$") + df.format(Math.abs(v));
+        try {
+            boolean neg = v < 0;
+            DecimalFormat df = new DecimalFormat("#,##0.00",
+                    DecimalFormatSymbols.getInstance(Locale.US));
+            return (neg ? "-$" : "$") + df.format(Math.abs(v));
+        } catch (Exception e) {
+            return "$0.00";
+        }
     }
 
     /** Igual que billLabel()/dueLabel() en la app. */
     static String daysLabel(int days) {
-        if (days == 0) return "vence hoy";
-        if (days == 1) return "vence mañana";
-        if (days < 0) return "vencido hace " + (-days) + (days == -1 ? " día" : " días");
-        return "vence en " + days + " días";
+        try {
+            if (days == 0) return "vence hoy";
+            if (days == 1) return "vence mañana";
+            if (days < 0) return "vencido hace " + (-days) + (days == -1 ? " día" : " días");
+            return "vence en " + days + " días";
+        } catch (Exception e) {
+            return "";
+        }
     }
 }
