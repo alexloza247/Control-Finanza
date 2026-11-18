@@ -10,11 +10,13 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -193,6 +195,27 @@ public class FinanzasWidgetService extends RemoteViewsService {
             }
         }
 
+        /** Color del snapshot como entero, o null si falta o no es un hex valido. */
+        private static Integer parseColorOrNull(String hex) {
+            if (hex == null) return null;
+            try {
+                return Color.parseColor(hex);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
+        /** Luminancia relativa sRGB (0 = negro, 1 = blanco) de un color. */
+        private static double relLuminance(int color) {
+            double r = Color.red(color) / 255.0;
+            double g = Color.green(color) / 255.0;
+            double b = Color.blue(color) / 255.0;
+            r = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+            g = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+            b = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
         private void reload() {
             try {
                 items.clear();
@@ -232,13 +255,26 @@ public class FinanzasWidgetService extends RemoteViewsService {
             }
             boolean themed = theme != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
             String pkg = ctx.getPackageName();
+            // Fondo efectivo del widget: con tinte (API 31+) manda
+            // widgetBg del snapshot o el fondo del tema; sin tinte se ve
+            // el fondo fijo claro. Sirve para elegir colores de texto
+            // con contraste (ver saldoViews).
+            int widgetBgColor = 0xFFF2F5F4;
+            try {
+                if (themed) {
+                    Integer wb = parseColorOrNull(snap == null ? null : snap.optString("widgetBg", null));
+                    if (wb != null) widgetBgColor = wb;
+                    else if (theme != null) widgetBgColor = theme.bg;
+                }
+            } catch (Exception ignored) {
+            }
             if (snap == null) {
                 items.add(new Item(TYPE_NOTE, noteViews(pkg, theme, themed, 900,
                         "Abre la app para cargar tus datos", FinanzasWidgetProvider.DEEP_LINK + "home")));
                 return;
             }
             if (tab == FinanzasWidgetProvider.TAB_SALDO) {
-                items.add(new Item(TYPE_SALDO, saldoViews(pkg, snap, theme, themed)));
+                items.add(new Item(TYPE_SALDO, saldoViews(pkg, snap, theme, themed, widgetBgColor)));
             } else if (tab == FinanzasWidgetProvider.TAB_BILLS) {
                 buildBills(pkg, snap, theme, themed);
             } else {
@@ -249,18 +285,27 @@ public class FinanzasWidgetService extends RemoteViewsService {
         }
 
         private RemoteViews saldoViews(String pkg, JSONObject snap,
-                                       FinanzasWidgetProvider.Theme theme, boolean themed) {
+                                       FinanzasWidgetProvider.Theme theme, boolean themed,
+                                       int widgetBgColor) {
             RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_saldo);
             int ink = (themed && theme != null) ? theme.ink : 0xFF14211F;
             int muted = (themed && theme != null) ? theme.muted : 0xFF5E6E6B;
+            // Contraste con el fondo efectivo del widget: sobre un fondo
+            // oscuro (p. ej. el widgetBg elegido por el usuario) el texto
+            // principal va en blanco y las etiquetas en gris claro; sobre
+            // fondo claro se mantienen los colores del tema.
+            boolean darkBg = relLuminance(widgetBgColor) < 0.5;
+            int mainColor = darkBg ? 0xFFFFFFFF : ink;
+            int labelColor = darkBg ? 0xFFC9C9C9 : muted;
             row.setTextViewText(R.id.row_saldo_amount,
                     FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "avail")));
             // Columna izquierda en UN solo TextView (estructura identica a
             // las filas que funcionan: pesos solo en TextView, profundidad
             // 3, sin View ni columnas anidadas): "Deuda: $X" en la primera
-            // linea y "Puedes gastar: $Y" en la segunda, con etiquetas
-            // apagadas y montos principales (colores por tramo via
-            // SpannableString, tecnica soportada por RemoteViews).
+            // linea y "Puedes gastar: $Y" en la segunda, con etiquetas en
+            // negrita y apagadas y montos principales (colores y negritas
+            // por tramo via SpannableString, tecnica soportada por
+            // RemoteViews).
             String debtTxt = FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "debt"));
             String freeTxt = FinanzasWidgetProvider.fmtMoney(safeDouble(snap, "free"));
             String leftPlain = "Deuda: " + debtTxt + "\nPuedes gastar: " + freeTxt;
@@ -269,13 +314,19 @@ public class FinanzasWidgetService extends RemoteViewsService {
             int nl = leftPlain.indexOf('\n');
             int freeLabelStart = nl + 1;
             int freeValStart = freeLabelStart + "Puedes gastar: ".length();
-            left.setSpan(new ForegroundColorSpan(muted), 0, debtValStart,
+            left.setSpan(new ForegroundColorSpan(labelColor), 0, debtValStart,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            left.setSpan(new ForegroundColorSpan(ink), debtValStart,
+            left.setSpan(new ForegroundColorSpan(mainColor), debtValStart,
                     debtValStart + debtTxt.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            left.setSpan(new ForegroundColorSpan(muted), freeLabelStart, freeValStart,
+            left.setSpan(new ForegroundColorSpan(labelColor), freeLabelStart, freeValStart,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            left.setSpan(new ForegroundColorSpan(ink), freeValStart, leftPlain.length(),
+            left.setSpan(new ForegroundColorSpan(mainColor), freeValStart, leftPlain.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            // Etiquetas en negrita ("Deuda:" / "Puedes gastar:").
+            left.setSpan(new StyleSpan(Typeface.BOLD), 0, "Deuda:".length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            left.setSpan(new StyleSpan(Typeface.BOLD), freeLabelStart,
+                    freeLabelStart + "Puedes gastar:".length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             row.setTextViewText(R.id.row_saldo_left, left);
             // Columna derecha: "Mes" / ingreso verde / gasto rojo, un color
@@ -286,18 +337,20 @@ public class FinanzasWidgetService extends RemoteViewsService {
             SpannableString right = new SpannableString(rightPlain);
             int incStart = "Mes\n".length();
             int expStart = incStart + incTxt.length() + 1;
-            right.setSpan(new ForegroundColorSpan(muted), 0, 3,
+            right.setSpan(new ForegroundColorSpan(labelColor), 0, 3,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.GREEN), incStart,
                     incStart + incTxt.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.RED), expStart,
                     rightPlain.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             row.setTextViewText(R.id.row_saldo_right, right);
-            if (themed && theme != null) {
-                try {
-                    row.setTextColor(R.id.row_saldo_amount, theme.ink);
-                } catch (Exception ignored) {
-                }
+            // Color del saldo grande y color base de las columnas (por si
+            // algun caracter queda sin tramo): siempre segun el contraste.
+            try {
+                row.setTextColor(R.id.row_saldo_amount, mainColor);
+                row.setTextColor(R.id.row_saldo_left, mainColor);
+                row.setTextColor(R.id.row_saldo_right, mainColor);
+            } catch (Exception ignored) {
             }
             return row;
         }
