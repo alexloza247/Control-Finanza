@@ -3,7 +3,7 @@
      en negrita a la derecha. Segunda: cuando vence ("vence hoy",
      "vencido hace 1 día", ...) en texto mas chico y apagado, para que el
      nombre y el monto nunca se corten por culpa de la leyenda.
-     Filas compactas (46dp) con separacion minima entre ellas para que
+     Filas compactas (48dp) con separacion minima entre ellas para que
      quepan 2 filas completas en el widget 5x2; el marginTop garantiza
      espacio arriba de la primera fila. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -13,13 +13,13 @@
     android:layout_marginTop="2dp"
     android:layout_marginBottom="0dp"
     android:background="@drawable/widget_chip_bg"
-    android:minHeight="46dp"
+    android:minHeight="48dp"
     android:gravity="center_vertical"
     android:orientation="vertical"
     android:paddingStart="10dp"
     android:paddingEnd="10dp"
     android:paddingTop="4dp"
-    android:paddingBottom="4dp">
+    android:paddingBottom="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
