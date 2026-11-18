@@ -146,13 +146,24 @@ public class FinanzasWidgetService extends RemoteViewsService {
             RemoteViews row = new RemoteViews(pkg, R.layout.widget_row_saldo);
             row.setTextViewText(R.id.row_saldo_amount,
                     FinanzasWidgetProvider.fmtMoney(snap.optDouble("avail", 0)));
-            String detail = "Deuda: " + FinanzasWidgetProvider.fmtMoney(snap.optDouble("debt", 0))
-                    + "\nMes: +" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthInc", 0))
-                    + "  −" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthExp", 0));
-            row.setTextViewText(R.id.row_saldo_detail, detail);
+            row.setTextViewText(R.id.row_saldo_debt,
+                    FinanzasWidgetProvider.fmtMoney(snap.optDouble("debt", 0)));
+            row.setTextViewText(R.id.row_saldo_free,
+                    FinanzasWidgetProvider.fmtMoney(snap.optDouble("free", 0)));
+            row.setTextViewText(R.id.row_saldo_inc,
+                    "+" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthInc", 0)));
+            row.setTextViewText(R.id.row_saldo_exp,
+                    "−" + FinanzasWidgetProvider.fmtMoney(snap.optDouble("monthExp", 0)));
             if (themed) {
                 row.setTextColor(R.id.row_saldo_amount, theme.ink);
-                row.setTextColor(R.id.row_saldo_detail, theme.muted);
+                row.setTextColor(R.id.row_saldo_debt_label, theme.muted);
+                row.setTextColor(R.id.row_saldo_debt, theme.ink);
+                row.setTextColor(R.id.row_saldo_free_label, theme.muted);
+                row.setTextColor(R.id.row_saldo_free, theme.ink);
+                row.setTextColor(R.id.row_saldo_month_label, theme.muted);
+                row.setTextColor(R.id.row_saldo_inc, FinanzasWidgetProvider.GREEN);
+                row.setTextColor(R.id.row_saldo_exp, FinanzasWidgetProvider.RED);
+                row.setInt(R.id.row_saldo_divider, "setBackgroundColor", theme.divider);
             }
             return row;
         }

@@ -49,13 +49,15 @@ import java.util.Locale;
  * un pago proximo se abre su "Revisar y pagar"; "Registrar movimiento" abre
  * el form nuevo del tipo de la pestana.
  *
- * El widget se actualiza al tocar una pestana y cada 30 min
- * (updatePeriodMillis). Si la app guardo datos nuevos, el widget los muestra
- * en la siguiente actualizacion.
+ * El widget se actualiza al tocar una pestana, cada 30 min
+ * (updatePeriodMillis) y al instante cuando la app guarda datos nuevos
+ * (listener sobre el snapshot en CapacitorStorage).
  *
  * Sigue los colores del tema de la app (snapshot.theme): fondo, acento del
  * boton y de la pestana activa, iconos y textos; en modo oscuro usa
- * superficies oscuras. Cada pago proximo va en su propio recuadro, como
+ * superficies oscuras. Si el snapshot trae widgetBg (color de fondo del
+ * widget elegido en Configuracion > Apariencia), ese color manda sobre el
+ * fondo del tema. Cada pago proximo va en su propio recuadro, como
  * los atajos. El tinte de fondos usa setBackgroundTintList (RemoteViews,
  * API 31+); en versiones viejas se mantiene el aspecto fijo de siempre.
  */
@@ -102,6 +104,10 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
     static final int MAX_BILLS = 2;
     static final int MAX_CHIPS = 3;
 
+    // Colores fijos del mes en la pestana Saldo: ingreso verde, gasto rojo.
+    static final int GREEN = 0xFF1F7A5C;
+    static final int RED = 0xFFC62828;
+
     private static final int[] TAB_BUTTONS = {
             R.id.widget_tab_saldo,
             R.id.widget_tab_bills,
@@ -110,8 +116,53 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
             R.id.widget_tab_transfer
     };
 
+    // La app escribe el snapshot en CapacitorStorage cada vez que guarda
+    // (incluido el cambio de color de fondo del widget). Este listener
+    // redibuja el widget al instante cuando eso pasa, en vez de esperar la
+    // actualizacion periodica de 30 min.
+    private static Context appContext;
+    private static boolean listenerRegistered = false;
+    private static final SharedPreferences.OnSharedPreferenceChangeListener snapshotListener =
+            new SharedPreferences.OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+                    if (!KEY_SNAPSHOT.equals(key) || appContext == null) return;
+                    AppWidgetManager mgr = AppWidgetManager.getInstance(appContext);
+                    ComponentName cn = new ComponentName(appContext, FinanzasWidgetProvider.class);
+                    for (int id : mgr.getAppWidgetIds(cn)) {
+                        mgr.updateAppWidget(id, buildViews(appContext, id));
+                        mgr.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
+                    }
+                }
+            };
+
+    private static void ensureSnapshotListener(Context context) {
+        appContext = context.getApplicationContext();
+        if (listenerRegistered) return;
+        listenerRegistered = true;
+        appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                .registerOnSharedPreferenceChangeListener(snapshotListener);
+    }
+
+    @Override
+    public void onEnabled(Context context) {
+        super.onEnabled(context);
+        ensureSnapshotListener(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        super.onDisabled(context);
+        if (appContext != null) {
+            appContext.getSharedPreferences(CAP_PREFS, Context.MODE_PRIVATE)
+                    .unregisterOnSharedPreferenceChangeListener(snapshotListener);
+        }
+        listenerRegistered = false;
+    }
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        ensureSnapshotListener(context);
         for (int id : appWidgetIds) {
             appWidgetManager.updateAppWidget(id, buildViews(context, id));
             appWidgetManager.notifyAppWidgetViewDataChanged(id, R.id.widget_content);
@@ -120,6 +171,7 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        ensureSnapshotListener(context);
         if (ACTION_WIDGET_LINK.equals(intent.getAction())) {
             String url = intent.getStringExtra(EXTRA_LINK_URL);
             if (url == null || url.isEmpty()) {
@@ -167,19 +219,22 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         super.onReceive(context, intent);
     }
 
-    private RemoteViews buildViews(Context context, int appWidgetId) {
+    private static RemoteViews buildViews(Context context, int appWidgetId) {
         String pkg = context.getPackageName();
         int tab = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE)
                 .getInt(KEY_TAB, TAB_SALDO);
         JSONObject snap = readSnapshot(context);
         Theme theme = resolveTheme(context, snap);
+        // Color de fondo del widget elegido en Configuracion > Apariencia
+        // (snapshot.widgetBg): si esta, manda sobre el fondo del tema.
+        Integer widgetBg = parseColorOrNull(snap == null ? null : snap.optString("widgetBg", null));
         // El tinte de fondos (setBackgroundTintList) solo existe en
         // RemoteViews desde API 31. En versiones viejas se mantiene el
         // aspecto fijo de siempre (sin tema), para no romper nada.
         boolean themed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
         RemoteViews views = new RemoteViews(pkg, R.layout.widget_finanzas);
         if (themed) {
-            tintBackground(views, R.id.widget_root, theme.bg);
+            tintBackground(views, R.id.widget_root, widgetBg != null ? widgetBg : theme.bg);
         }
         for (int i = 0; i < TAB_BUTTONS.length; i++) {
             views.setInt(TAB_BUTTONS[i], "setBackgroundResource",
@@ -243,9 +298,9 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
      * que el widget cambie aunque la app no se haya abierto.
      */
     static final class Theme {
-        final int bg, surface, ink, muted, primary, secondary, tabSelected;
+        final int bg, surface, ink, muted, primary, secondary, tabSelected, divider;
 
-        Theme(int bg, int surface, int ink, int muted, int primary, int secondary, int tabSelected) {
+        Theme(int bg, int surface, int ink, int muted, int primary, int secondary, int tabSelected, int divider) {
             this.bg = bg;
             this.surface = surface;
             this.ink = ink;
@@ -253,6 +308,7 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
             this.primary = primary;
             this.secondary = secondary;
             this.tabSelected = tabSelected;
+            this.divider = divider;
         }
     }
 
@@ -276,7 +332,8 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         int muted = dark ? DARK_MUTED : LIGHT_MUTED;
         int tabSelected = dark ? blend(DARK_SURFACE, primary, 0.35f)
                 : blend(bgCustom, primary, 0.18f);
-        return new Theme(bg, surface, ink, muted, primary, secondary, tabSelected);
+        int divider = blend(muted, bg, 0.5f);
+        return new Theme(bg, surface, ink, muted, primary, secondary, tabSelected, divider);
     }
 
     private static boolean isNightMode(Context context) {
@@ -291,6 +348,16 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
             return Color.parseColor(hex);
         } catch (Exception e) {
             return fallback;
+        }
+    }
+
+    /** Color del snapshot como entero, o null si falta o no es un hex valido. */
+    private static Integer parseColorOrNull(String hex) {
+        if (hex == null) return null;
+        try {
+            return Color.parseColor(hex);
+        } catch (Exception e) {
+            return null;
         }
     }
 
@@ -323,7 +390,7 @@ public class FinanzasWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private PendingIntent tabIntent(Context context, int tab) {
+    private static PendingIntent tabIntent(Context context, int tab) {
         Intent i = new Intent(context, FinanzasWidgetProvider.class);
         i.setAction(ACTION_TAB);
         i.putExtra(EXTRA_TAB, tab);

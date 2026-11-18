@@ -101,6 +101,8 @@ Si activas **Recordatorio por ubicación** en Configuración > Ubicación, la ap
 
 - Widget para la pantalla principal con 5 pestañas: Saldo, Próximos pagos, Ingreso, Gasto y Transferencia.
 - Desde ahí ves tu saldo y tus próximos pagos, y puedes abrir el formulario para registrar un movimiento con tus atajos. El widget nunca registra nada solo: siempre abre la app para que confirmes.
+- En la pestaña Saldo ves tu saldo arriba y, abajo en dos columnas, tu deuda en tarjetas y lo que puedes gastar a la izquierda, y los ingresos y gastos del mes a la derecha.
+- Puedes cambiar el color de fondo del widget en Configuración > Apariencia; si no lo cambias, sigue los colores de tu tema.
 - Para agregarlo: mantén presionada la pantalla principal, elige Widgets, busca "Control de Finanzas" y arrástralo.
 
 ## Cómo moverte por la app
