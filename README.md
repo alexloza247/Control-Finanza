@@ -40,7 +40,7 @@ Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se com
 
 - Registra **ingresos, gastos y transferencias** entre tus cuentas, con nota, fecha y hora, y categoría. Puedes crear tus propias categorías en Configuración > Mis categorías.
 - Al elegir una cuenta, la lista muestra su nombre y su saldo disponible en una segunda línea (en tarjetas: el crédito disponible).
-- **Color por cuenta:** si eliges un color para una cuenta (en **Editar cuenta**, con la cuadrícula de colores o escribiendo el código hexadecimal), su tarjeta y todos sus movimientos muestran una barrita de ese color a la izquierda, para identificarlos de un vistazo. Sin color, no se muestra nada.
+- **Color por cuenta:** si eliges un color para una cuenta (en **Editar cuenta**, tocando el botón de color se abre una mini ventana con el espectro, la cuadrícula de colores y el código hexadecimal), su tarjeta y todos sus movimientos muestran una barrita de ese color a la izquierda, para identificarlos de un vistazo. Sin color, no se muestra nada.
 - El campo **Monto** tiene una calculadora: haz la cuenta y toca **Insertar**.
 - **Foto del ticket:** tómale foto al ticket o elígela de la galería; se guarda con el movimiento y la puedes descargar.
 - Busca por nota, categoría, cuenta, monto o fecha (por ejemplo "500" o "13/11") y filtra por tipo (Todos, Ingresos, Gastos, Transferencias) o por cuenta.
@@ -79,7 +79,7 @@ En **Configuración > Notificaciones** está el interruptor maestro: si está ap
 
 ## Configuración: apariencia
 
-- Crea tu propio tema con tus colores (principal, secundario, fondo y barra de navegación) o usa el modo Claro, Oscuro o Automático.
+- Crea tu propio tema con tus colores (principal, secundario, fondo y barra de navegación) tocando cada color: se abre una mini ventana con el espectro, la cuadrícula y el código hexadecimal; o usa el modo Claro, Oscuro o Automático.
 
 ## Respaldo y datos
 
