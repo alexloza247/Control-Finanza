@@ -39,17 +39,20 @@ Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se com
 ## Movimientos
 
 - Registra **ingresos, gastos y transferencias** entre tus cuentas, con nota, fecha y hora, y categoría. Puedes crear tus propias categorías en Configuración > Mis categorías.
+- Al elegir una cuenta, la lista muestra su nombre y su saldo disponible en una segunda línea (en tarjetas: el crédito disponible).
 - El campo **Monto** tiene una calculadora: haz la cuenta y toca **Insertar**.
 - **Foto del ticket:** tómale foto al ticket o elígela de la galería; se guarda con el movimiento y la puedes descargar.
 - Busca por nota, categoría, cuenta, monto o fecha (por ejemplo "500" o "13/11") y filtra por tipo (Todos, Ingresos, Gastos, Transferencias) o por cuenta.
 - El lápiz (✎) edita el movimiento y el ícono **↻** de abajo lo repite: abre el formulario ya lleno con los mismos datos y la fecha de hoy.
 - Si un gasto supera lo disponible en la cuenta, la app te avisa y tú decides si seguir o cancelar.
+- Si al editar una cuenta cambias su **saldo actual**, la app te avisa y crea un movimiento de ajuste para que el saldo quede exacto (y queda registrado en el historial de ajustes).
 - Al eliminar un movimiento (o un pago, cuenta, atajo o categoría), la app pregunta antes para que no se borre por accidente.
 
 ## Tarjetas de crédito y meses sin intereses (MSI)
 
 - Compra a meses sin intereses: 3, 6, 9, 12, 18, 24 meses o un número propio. Cada plan muestra su mensualidad y cuántos pagos lleva.
-- **Pagar tarjeta:** paga desde efectivo o débito, o sin descontar de otra cuenta. Si hay MSI activos, puedes pagar solo la mensualidad. Los pagos se aplican primero a los planes MSI más viejos.
+- En tarjetas **quincenales** los planes son en quincenas: 3, 6, 9, 12 quincenas o un número propio, y el pago se calcula por quincena.
+- **Pagar tarjeta:** paga desde efectivo o débito, o sin descontar de otra cuenta. Si hay MSI activos, puedes pagar solo la mensualidad (o solo la quincena, en tarjetas quincenales). Los pagos se aplican primero a los planes MSI más viejos.
 
 ## Calendario
 
