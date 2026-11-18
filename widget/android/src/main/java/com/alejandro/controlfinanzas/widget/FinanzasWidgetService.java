@@ -119,6 +119,22 @@ public class FinanzasWidgetService extends RemoteViewsService {
 
         private void reload() {
             items.clear();
+            try {
+                doReload();
+            } catch (Exception e) {
+                // Nunca dejar el widget en "Cargando...": si algo falla al armar
+                // el contenido, mostrar el aviso en vez de dejar la lista vacia.
+                items.clear();
+                try {
+                    String pkg = ctx.getPackageName();
+                    items.add(new Item(TYPE_NOTE, noteViews(pkg, null, false, 900,
+                            "Abre la app para cargar tus datos", FinanzasWidgetProvider.DEEP_LINK + "home")));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
+        private void doReload() {
             int tab = ctx.getSharedPreferences(FinanzasWidgetProvider.WIDGET_PREFS, Context.MODE_PRIVATE)
                     .getInt(FinanzasWidgetProvider.KEY_TAB, FinanzasWidgetProvider.TAB_SALDO);
             JSONObject snap = FinanzasWidgetProvider.readSnapshot(ctx);
