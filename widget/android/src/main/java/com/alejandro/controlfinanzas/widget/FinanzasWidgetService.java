@@ -339,6 +339,9 @@ public class FinanzasWidgetService extends RemoteViewsService {
             int expStart = incStart + incTxt.length() + 1;
             right.setSpan(new ForegroundColorSpan(labelColor), 0, 3,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            // "Mes" en negrita (mismo color).
+            right.setSpan(new StyleSpan(Typeface.BOLD), 0, "Mes".length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.GREEN), incStart,
                     incStart + incTxt.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             right.setSpan(new ForegroundColorSpan(FinanzasWidgetProvider.RED), expStart,

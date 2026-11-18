@@ -79,7 +79,7 @@
         android:layout_weight="1"
         android:divider="@android:color/transparent"
         android:dividerHeight="8dp"
-        android:paddingTop="10dp"
-        android:clipToPadding="false"
+        android:paddingTop="6dp"
+        android:clipToPadding="true"
         android:scrollbars="vertical" />
 </LinearLayout>
