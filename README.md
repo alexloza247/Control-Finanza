@@ -77,6 +77,16 @@ En **Configuración > Notificaciones** está el interruptor maestro: si está ap
 - **Recordatorio diario de saldos:** cada día a la hora que elijas (por defecto 23:00), la app te pide confirmar el saldo de cada cuenta. Las tarjetas se confirman por su **crédito disponible**. Si corriges un saldo, se crea un ajuste para que todo cuadre. Si no confirmas, te avisa hasta 2 veces más (máximo 3 avisos al día). Hay un botón **Probar recordatorio**.
 - **Recordatorio de pagos próximos:** te avisa un día antes y el mismo día de cada pago (por defecto a las 09:00). Nace apagado: actívalo si lo quieres. Al tocar el aviso se abre el formulario para pagar.
 
+## Recordatorio por ubicación (solo en la app)
+
+Si activas **Recordatorio por ubicación** en Configuración > Ubicación, la app te avisa al salir de un comercio registrado para que registres el gasto. Funciona aunque la app esté cerrada.
+
+- Al activarlo te pedirá el permiso de ubicación. Para que el aviso llegue con la app cerrada también hace falta el permiso de ubicación en segundo plano ("Permitir todo el tiempo"): si falta, la misma sección te explica y te lleva a los ajustes del sistema.
+- Toca **Ver comercios** para ver tus comercios registrados, agregar nuevos, editarlos, desactivarlos o eliminarlos. Cada comercio se puede activar o desactivar por separado.
+- Para agregar un comercio: toca **Agregar comercio**, escribe el nombre y el radio en metros, y elige la ubicación moviendo el pin en el mapa o tocando **Usar mi ubicación actual**. No hace falta estar en el lugar ni escribir direcciones.
+- Al salir de un comercio activo (después de haber estado dentro un rato) llega una notificación; al tocarla se abre el formulario de gasto con el nombre del comercio en la nota.
+- Apagar el interruptor general quita todas las geocercas; desactivar un comercio quita solo la suya.
+
 ## Configuración: apariencia
 
 - Crea tu propio tema con tus colores (principal, secundario, fondo y barra de navegación) tocando cada color: se abre una mini ventana con el espectro, la cuadrícula y el código hexadecimal; o usa el modo Claro, Oscuro o Automático.
