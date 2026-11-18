@@ -31,12 +31,12 @@
             android:id="@+id/row_saldo_left"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:ellipsize="end"
+            android:lineSpacingExtra="6dp"
             android:maxLines="2"
             android:textColor="#14211F"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/row_saldo_right"
@@ -48,6 +48,6 @@
             android:gravity="end"
             android:maxLines="3"
             android:textColor="#14211F"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
     </LinearLayout>
 </LinearLayout>
