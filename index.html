@@ -88,6 +88,13 @@ input,select{width:100%;font:inherit;padding:11px;border-radius:10px;border:1px 
 .accrow .an{font-weight:600}
 .accrow .ab{font-size:13px;color:var(--mute2);margin-top:1px}
 .accrow.sel{background:var(--bg)}
+/* Animación de la capa del selector (cuentas y MSI): entra subiendo como
+   los modales y sale bajando con desvanecido. El cierre real lo hace
+   closeSheetBox (añade .closing, espera 220 ms y quita la capa); con
+   "Reducir movimiento" no hay animación (ver media query abajo). */
+.accsheet .box{animation:sheetUp .25s ease-out}
+.accsheet.closing .box{animation:sheetDown .22s ease-in both}
+.accsheet.closing{animation:fadeOut .22s ease-in both}
 /* Campo obligatorio que falta al guardar: borde rojo para que se vea qué
    falta agregar. En el grupo de chips de categoría se usa un contorno,
    para no mover el acomodo. */
@@ -169,7 +176,7 @@ a.lnk{color:var(--g);font-weight:600;background:none;border:0;font:inherit;paddi
 button,.cd{transition:transform .12s ease,opacity .12s ease}
 button:active,.cd:active{transform:scale(.96);opacity:.85}
 *{-webkit-tap-highlight-color:transparent}
-@media (prefers-reduced-motion:reduce){#app.tab-enter .item,#app.tab-enter .total,#app .view.slide-l,#app .view.slide-r,.sheet .box,.calcsheet .box,.photosheet .box,.sheet.closing,.calcsheet.closing,.photosheet.closing,.sheet.closing .box,.calcsheet.closing .box,.photosheet.closing .box,.toast,.chart-body{animation:none}button,.cd,.seg button{transition:none}}
+@media (prefers-reduced-motion:reduce){#app.tab-enter .item,#app.tab-enter .total,#app .view.slide-l,#app .view.slide-r,.sheet .box,.calcsheet .box,.photosheet .box,.sheet.closing,.calcsheet.closing,.photosheet.closing,.sheet.closing .box,.calcsheet.closing .box,.photosheet.closing .box,.accsheet .box,.accsheet.closing,.accsheet.closing .box,.toast,.chart-body{animation:none}button,.cd,.seg button{transition:none}}
 </style>
 </head>
 <body>
@@ -226,7 +233,11 @@ function dayList(d,f){d=+d;if(!(d>0))return [];return f==='biweekly'?[d,biDay(d)
 function dueDays(a){return dayList(a.dueDay,a.freq)}
 function cutDays(a){return dayList(a.cutDay,a.freq)}
 function nextDueCard(a){return dueDays(a).map(function(x){return nextDue(x)}).sort(function(x,y){return x.days-y.days})[0]}
-function msiSelHtml(t,biweekly){var std=biweekly?[0,3,6,9,12]:[0,3,6,9,12,18,24],unit=biweekly?'quincenas':'meses',cur=t.msiSel||(std.indexOf(+t.msi||0)>=0?String(+t.msi||0):'custom');return '<select id="f_msi">'+std.map(function(m){return '<option value="'+m+'"'+(String(m)===cur?' selected':'')+'>'+(m?m+' '+unit:'Pago único')+'</option>'}).join('')+'<option value="custom"'+(cur==='custom'?' selected':'')+'>Otro…</option></select>'+(cur==='custom'?'<input id="f_msin" type="number" inputmode="numeric" min="2" max="60" placeholder="'+(biweekly?'¿Cuántas quincenas?':'¿Cuántos meses?')+'" value="'+(t.msi>1?t.msi:'')+'" style="margin-top:8px">':'')}
+/* Selector de MSI propio (mismo estilo que el de cuentas): input oculto
+   con el mismo id (para que keep() siga leyendo $('f_msi').value) + botón
+   disparador que abre la capa con las opciones. El campo numérico de
+   "Otro…" (f_msin) se mantiene igual que antes. */
+function msiSelHtml(t,biweekly){var std=biweekly?[0,3,6,9,12]:[0,3,6,9,12,18,24],unit=biweekly?'quincenas':'meses',cur=t.msiSel||(std.indexOf(+t.msi||0)>=0?String(+t.msi||0):'custom'),lbl=cur==='custom'?'Otro…':(cur==='0'?'Pago único':cur+' '+unit);return '<input type="hidden" id="f_msi" value="'+cur+'"><button type="button" class="accpick" data-msipick="f_msi" data-msiunit="'+unit+'" id="f_msi_btn">'+esc(lbl)+'</button>'+(cur==='custom'?'<input id="f_msin" type="number" inputmode="numeric" min="2" max="60" placeholder="'+(biweekly?'¿Cuántas quincenas?':'¿Cuántos meses?')+'" value="'+(t.msi>1?t.msi:'')+'" style="margin-top:8px">':'')}
 function nextDue(day){var n=new Date();n.setHours(0,0,0,0);var d=new Date(n.getFullYear(),n.getMonth(),Math.min(day,28+3));
  var last=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();d=new Date(n.getFullYear(),n.getMonth(),Math.min(day,last));
  if(d<n){last=new Date(n.getFullYear(),n.getMonth()+2,0).getDate();d=new Date(n.getFullYear(),n.getMonth()+1,Math.min(day,last))}
@@ -491,6 +502,11 @@ function accPickBal(a){if(a.type==='credit'){if((+a.limit||0)>0)return 'Disponib
 function accPickerHtml(id,sel,skip,emptyLabel,accounts){var list=accounts||sortedAccs().filter(function(a){return a.id!==skip});var a=sel?list.filter(function(x){return x.id===sel})[0]:null;if(sel&&!a)sel='';var nm=a?esc(a.name):esc(emptyLabel||'Elige una cuenta');return '<input type="hidden" id="'+id+'" value="'+esc(sel||'')+'"><button type="button" class="accpick'+(a?'':' ph')+'" data-accpick="'+id+'" data-skip="'+esc(skip||'')+'" data-empty="'+esc(emptyLabel||'Elige una cuenta')+'"'+(accounts?' data-srcs="1"':'')+' id="'+id+'_btn">'+nm+'</button>'}
 function openAccPick(id){var btn=$(id+'_btn'),hid=$(id);if(!btn||!hid)return;var skip=btn.getAttribute('data-skip')||'',emptyLabel=btn.getAttribute('data-empty')||'Elige una cuenta',srcsMode=btn.getAttribute('data-srcs')==='1';var cur=hid.value;var list=srcsMode?sortedAccs().filter(function(x){return x.type!=='credit'}):sortedAccs().filter(function(a){return a.id!==skip});var h='<div class="accsheet" id="acpsh"><div class="box"><h2 style="margin-top:0">'+esc(emptyLabel)+'</h2>';h+='<button type="button" class="accrow'+(cur===''?' sel':'')+'" data-accpickv="'+id+'" data-v=""><div class="an">'+esc(emptyLabel)+'</div></button>';var lt='';list.forEach(function(a){if(a.type!==lt){if(lt)h+='</div>';h+='<div class="m" style="margin:12px 0 2px;font-weight:600">'+TYPES[a.type]+'</div><div>';lt=a.type}h+='<button type="button" class="accrow'+(cur===a.id?' sel':'')+'" data-accpickv="'+id+'" data-v="'+a.id+'"><div class="an">'+esc(a.name)+'</div><div class="ab">'+esc(accPickBal(a))+'</div></button>'});if(lt)h+='</div>';h+='<button class="btn ghost" id="acp_cn" style="margin-top:12px">Cancelar</button></div></div>';$('accpick').innerHTML=h;$('acp_cn').onclick=closeAccPick;$('acpsh').onclick=function(e){if(e.target===$('acpsh'))closeAccPick()}}
 function closeAccPick(){closeSheetBox('acpsh','accpick')}
+/* Selector de MSI propio: misma capa (#accpick, hoja #acpsh) y mismas
+   animaciones que el de cuentas; solo cambian las opciones (plazos en
+   meses o quincenas según la tarjeta) y la selección, que actualiza el
+   oculto f_msi y dispara 'change' para que corran keep()+draw(). */
+function openMsiPick(){var btn=$('f_msi_btn'),hid=$('f_msi');if(!btn||!hid)return;var unit=btn.getAttribute('data-msiunit')||'meses',bw=unit==='quincenas',std=bw?[0,3,6,9,12]:[0,3,6,9,12,18,24],cur=hid.value;var h='<div class="accsheet" id="acpsh"><div class="box"><h2 style="margin-top:0">'+(bw?'Quincenas sin intereses':'Meses sin intereses')+'</h2>';std.forEach(function(m){var v=String(m);h+='<button type="button" class="accrow'+(cur===v?' sel':'')+'" data-msipickv="f_msi" data-v="'+v+'"><div class="an">'+(m?m+' '+unit:'Pago único')+'</div></button>'});h+='<button type="button" class="accrow'+(cur==='custom'?' sel':'')+'" data-msipickv="f_msi" data-v="custom"><div class="an">Otro…</div></button>';h+='<button class="btn ghost" id="acp_cn" style="margin-top:12px">Cancelar</button></div></div>';$('accpick').innerHTML=h;$('acp_cn').onclick=closeAccPick;$('acpsh').onclick=function(e){if(e.target===$('acpsh'))closeAccPick()}}
 
 function accForm(a){a=a||{type:'cash'};var cr=a.type==='credit';
  open('<h2 style="margin-top:0">'+(a.id?'Editar cuenta':'Nueva cuenta')+'</h2><div class="seg" id="ts">'+['cash','debit','credit'].map(function(k){return '<button data-k="'+k+'" class="'+(a.type===k?'on':'')+'">'+TYPES[k]+'</button>'}).join('')+'</div>'+
@@ -997,6 +1013,13 @@ document.addEventListener('click',function(e){
  if(b){openAccPick(b.getAttribute('data-accpick'));return}
  var r=e.target.closest&&e.target.closest('[data-accpickv]');
  if(r){var id=r.getAttribute('data-accpickv'),v=r.getAttribute('data-v'),hid=$(id),btn=$(id+'_btn');if(hid){hid.value=v;if(btn){var a=v?acc(v):null;btn.textContent=a?a.name:(btn.getAttribute('data-empty')||'Elige una cuenta');btn.classList.toggle('ph',!a)}closeAccPick();try{hid.dispatchEvent(new Event('change'))}catch(x){}}return}
+ /* Selector de MSI propio: clic en el botón abre la capa con los plazos;
+   clic en una fila elige el plazo, actualiza el oculto y el botón, cierra
+   la capa y dispara 'change' (keep()+draw(), y enfoca f_msin si es Otro…). */
+ var mb=e.target.closest&&e.target.closest('[data-msipick]');
+ if(mb){openMsiPick();return}
+ var mr=e.target.closest&&e.target.closest('[data-msipickv]');
+ if(mr){var mid=mr.getAttribute('data-msipickv'),mv=mr.getAttribute('data-v'),mhid=$(mid),mbtn=$(mid+'_btn');if(mhid){mhid.value=mv;if(mbtn){var unit=mbtn.getAttribute('data-msiunit')||'meses';mbtn.textContent=mv==='custom'?'Otro…':(mv==='0'?'Pago único':mv+' '+unit)}closeAccPick();try{mhid.dispatchEvent(new Event('change'))}catch(x){}}return}
 });
 /* Swipe para cambiar de pestaña: deslizar a la izquierda avanza a la
    siguiente pestaña y a la derecha retrocede, en el orden de las pestañas

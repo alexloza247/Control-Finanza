@@ -52,6 +52,7 @@ Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se com
 
 - Compra a meses sin intereses: 3, 6, 9, 12, 18, 24 meses o un número propio. Cada plan muestra su mensualidad y cuántos pagos lleva.
 - En tarjetas **quincenales** los planes son en quincenas: 3, 6, 9, 12 quincenas o un número propio, y el pago se calcula por quincena.
+- El selector de plazos usa el mismo estilo que el de cuentas, con animación al abrir y cerrar.
 - **Pagar tarjeta:** paga desde efectivo o débito, o sin descontar de otra cuenta. Si hay MSI activos, puedes pagar solo la mensualidad (o solo la quincena, en tarjetas quincenales). Los pagos se aplican primero a los planes MSI más viejos.
 
 ## Calendario
