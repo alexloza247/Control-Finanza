@@ -56,7 +56,9 @@ public class GeofenceReceiver extends BroadcastReceiver {
         for (Geofence gf : fences) {
             String id = gf.getRequestId();
             if (type == Geofence.GEOFENCE_TRANSITION_ENTER) {
-                inside.put(id, now);
+                try {
+                    inside.put(id, now);
+                } catch (Exception ignored) {}
             } else if (type == Geofence.GEOFENCE_TRANSITION_EXIT) {
                 long enteredAt = inside.optLong(id, 0);
                 inside.remove(id);
