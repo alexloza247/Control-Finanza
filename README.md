@@ -32,8 +32,7 @@ Tus datos se guardan **solo en tu teléfono**; nada se sube a internet ni se com
 - **Puedes gastar:** lo que te queda de verdad después de restar los pagos próximos que vencen este mes y la mensualidad de tus compras a meses.
 - **Atajos:** botones para tus gastos o ingresos de siempre (por ejemplo, "Pasaje camión").
 - **Pagos próximos:** tus pagos pendientes ordenados por fecha, con aviso cuando faltan 3 días o menos.
-- **Gráficas:** Por categoría, Ingresos vs gastos y Evolución, por día, semana o mes.
-- **Compartir reporte del mes:** arma un texto con ingresos, gastos, balance, gastos por categoría y pagos próximos, listo para enviar por WhatsApp.
+- **Gráficas:** Por categoría, Ingresos vs gastos, Evolución, Saldo (tendencia de tu dinero) y Gastos por cuenta, por día, semana o mes.
 - **Pagos de tarjeta:** lo que debes pagar este mes en cada tarjeta.
 
 ## Movimientos

@@ -1019,7 +1019,8 @@ function animNums(){
 }
 /* Animaciones de las gráficas: la dona se dibuja, las barras de Por
    categoría y de Evolución crecen desde cero (las de categoría con un
-   pequeño escalonado), y las etiquetas de Evolución suben con su barra.
+   pequeño escalonado), las etiquetas de Evolución suben con su barra y la
+   línea de Saldo se dibuja sola (con su punto final apareciendo al final).
    Un solo bucle requestAnimationFrame con la misma curva que animNums
    (~500 ms). Con Reduce motion, o si no hay gráfica, los valores finales
    se ponen de inmediato, sin animación. */
@@ -1028,14 +1029,18 @@ function animCharts(){
  var pie=document.querySelector('svg[data-pie]');
  var rects=document.querySelectorAll('.iebar');
  var labels=document.querySelectorAll('.ielbl');
+ var line=document.querySelector('svg[data-saldo] .saldo-line');
+ var dot=document.querySelector('svg[data-saldo] .saldo-dot');
  function setFinal(){
   var i,b;
   for(i=0;i<bars.length;i++){b=bars[i];b.style.width=b.getAttribute('data-w')+'%'}
   if(pie){var C=parseFloat(pie.getAttribute('data-c')),fi=parseFloat(pie.getAttribute('data-fi')),fe=parseFloat(pie.getAttribute('data-fe')),inc=pie.querySelector('.pie-inc'),exp=pie.querySelector('.pie-exp');if(inc)inc.setAttribute('stroke-dasharray',(fi*C).toFixed(1)+' '+C.toFixed(1));if(exp){exp.setAttribute('stroke-dasharray',(fe*C).toFixed(1)+' '+C.toFixed(1));exp.setAttribute('stroke-dashoffset',(-fi*C).toFixed(1))}}
   for(i=0;i<rects.length;i++){var r=rects[i];r.setAttribute('y',r.getAttribute('data-y'));r.setAttribute('height',r.getAttribute('data-h'))}
   for(i=0;i<labels.length;i++){var l=labels[i];l.setAttribute('y',l.getAttribute('data-ly'))}
+  if(line){line.setAttribute('stroke-dashoffset','0')}
+  if(dot){dot.setAttribute('opacity','1')}
  }
- if(REDUCED||(!bars.length&&!pie&&!rects.length)){setFinal();return}
+ if(REDUCED||(!bars.length&&!pie&&!rects.length&&!line)){setFinal();return}
  var start=performance.now();
  function step(t){
   var p=Math.min(1,(t-start)/500),e=1-Math.pow(1-p,3),i;
@@ -1043,6 +1048,8 @@ function animCharts(){
   if(pie){var C=parseFloat(pie.getAttribute('data-c')),fi=parseFloat(pie.getAttribute('data-fi')),fe=parseFloat(pie.getAttribute('data-fe')),inc=pie.querySelector('.pie-inc'),exp=pie.querySelector('.pie-exp');if(inc)inc.setAttribute('stroke-dasharray',(fi*C*e).toFixed(1)+' '+C.toFixed(1));if(exp){exp.setAttribute('stroke-dasharray',(fe*C*e).toFixed(1)+' '+C.toFixed(1));exp.setAttribute('stroke-dashoffset',(-fi*C*e).toFixed(1))}}
   for(i=0;i<rects.length;i++){var r=rects[i],h=parseFloat(r.getAttribute('data-h'))||0,base=parseFloat(r.getAttribute('data-base'))||0;r.setAttribute('height',Math.max(0,h*e).toFixed(1));r.setAttribute('y',(base-h*e).toFixed(1))}
   for(i=0;i<labels.length;i++){var l=labels[i],ly=parseFloat(l.getAttribute('data-ly'))||0,lb=parseFloat(l.getAttribute('data-lbase'))||0;l.setAttribute('y',(lb+(ly-lb)*e).toFixed(1))}
+  if(line){var L=parseFloat(line.getAttribute('data-len'))||0;line.setAttribute('stroke-dashoffset',(L*(1-e)).toFixed(1))}
+  if(dot){dot.setAttribute('opacity',e.toFixed(2))}
   if(p<1)requestAnimationFrame(step);else setFinal();
  }
  requestAnimationFrame(step);
@@ -1055,7 +1062,6 @@ function home(){
  S.tx.forEach(function(t){if(t.date.slice(0,7)===m){if(t.type==='income')inc+=t.amt;if(t.type==='expense')exp+=t.amt}});
  var free=freeMoney(),h='<h1>Dinero disponible</h1><div class="total"><div class="n"><span class="anum" data-k="avail" data-v="'+avail+'">'+money(avail)+'</span></div><div class="s">Deuda en tarjetas: <span class="anum" data-k="debt" data-v="'+debt+'">'+money(debt)+'</span></div><div class="row" style="margin-top:14px"><div><div class="s">Ingresos del mes</div><b><span class="anum" data-k="minc" data-v="'+inc+'">'+money(inc)+'</span></b></div><div style="text-align:right"><div class="s">Gastos del mes</div><b><span class="anum" data-k="mexp" data-v="'+exp+'">'+money(exp)+'</span></b></div></div><div class="s" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">Puedes gastar: <b><span class="anum" data-k="free" data-v="'+free+'">'+money(free)+'</span></b></div></div>';
  h+=presetsHtml();h+=billsHtml();h+=chartsHtml();
- h+='<button class="btn ghost" data-act="sharereport" style="margin-top:4px">📊 Compartir reporte del mes</button>';
  var al=S.accounts.filter(function(a){return a.type==='credit'&&a.dueDay&&balance(a)<0}).map(function(a){return {a:a,d:nextDueCard(a)}}).sort(function(x,y){return x.d.days-y.d.days});
  if(al.length){h+='<h2>Pagos de tarjeta</h2>';al.forEach(function(o){var mm=msiMonth(o.a);h+='<div class="item alert '+(o.d.days<=3?'urg':'')+'"><div class="row"><div><div class="t">'+esc(o.a.name)+'</div><div class="m">'+dueLabel(o.d.days)+' · día '+dueDays(o.a).join(' y ')+(o.a.freq==='biweekly'?' (quincenal)':'')+(mm>0?(o.a.freq==='biweekly'?' · MSI por quincena: ':' · MSI del mes: ')+money(mm):'')+'</div></div><div style="text-align:right"><b class="neg">'+money(-balance(o.a))+'</b><br><button type="button" class="mini" data-act="pay" data-id="'+o.a.id+'">Pagar tarjeta</button></div></div></div>'})}
  h+='<h2>Últimos movimientos</h2>'+(S.tx.length?list(S.tx.slice().sort(cmp).slice(0,5)):'<div class="empty">Aún no hay movimientos.</div>');
@@ -1074,8 +1080,10 @@ function msiMonth(a){return msiPlans(a).reduce(function(s,p){return s+p.m},0)}
 // Convenciones: las transferencias NO son ingreso ni gasto (se excluyen de los
 // totales); una compra a MSI cuenta como gasto completo en el mes de la compra,
 // igual que en el resumen de home() (las mensualidades solo se muestran en Cuentas).
-// El filtro Día / Semana / Mes limita las tres gráficas al periodo elegido y se
+// El filtro Día / Semana / Mes limita las gráficas al periodo elegido y se
 // guarda en settings.chartPeriod (Día = hoy, Semana = lunes a domingo, Mes = actual).
+// Saldo: línea del saldo acumulado (patrimonio neto) en el periodo; Por cuenta:
+// gastos de cada cuenta en el periodo.
 function monthKeyOf(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function moneyShort(n){if(n>=1000000)return '$'+(n/1000000).toFixed(1).replace(/\.0$/,'')+' M';if(n>=1000)return '$'+(n/1000).toFixed(1).replace(/\.0$/,'')+' mil';return '$'+Math.round(n)}
 function monthIE(key){var i=0,e=0;S.tx.forEach(function(t){if((t.date||'').slice(0,7)===key){if(t.type==='income')i+=t.amt;if(t.type==='expense')e+=t.amt}});return {inc:i,exp:e}}
@@ -1084,11 +1092,80 @@ function monthIE(key){var i=0,e=0;S.tx.forEach(function(t){if((t.date||'').slice
 function periodRange(p){var n=new Date(),y=n.getFullYear(),mo=n.getMonth(),d=n.getDate();if(p==='day')return {from:fmt(n),to:fmt(n),label:'hoy'};if(p==='week'){var dw=(n.getDay()+6)%7,mon=new Date(y,mo,d-dw),sun=new Date(y,mo,d-dw+6);return {from:fmt(mon),to:fmt(sun),label:'esta semana'}}return {from:fmt(new Date(y,mo,1)),to:fmt(new Date(y,mo+1,0)),label:'este mes'}}
 function inPeriod(ds,r){return (ds||'')>=r.from&&(ds||'')<=r.to}
 function periodIE(p){var r=periodRange(p),i=0,e=0;S.tx.forEach(function(t){if(inPeriod(t.date,r)){if(t.type==='income')i+=t.amt;if(t.type==='expense')e+=t.amt}});return {inc:i,exp:e,r:r}}
+// Saldo acumulado (patrimonio neto = efectivo + débito − deuda de tarjetas)
+// calculado con la misma lógica de balance() de la app (txEffect), para que la
+// gráfica de línea coincida con el saldo real: ingresos suman, gastos restan,
+// transferencias entre cuentas propias se cancelan y las compras a MSI ya
+// cuentan completas en el mes de compra (así se registran).
+function balanceAt(a,ds){var b=+a.initial||0;S.tx.forEach(function(t){if((t.date||'')<=ds)b+=txEffect(t,a.id)});return Math.round(b*100)/100}
+function netWorthAt(ds){var s=0;S.accounts.forEach(function(a){s+=balanceAt(a,ds)});return Math.round(s*100)/100}
+function txNetEffect(t){var s=0;S.accounts.forEach(function(a){s+=txEffect(t,a.id)});return Math.round(s*100)/100}
+function addDaysStr(ds,n){var d=new Date(ds+'T00:00:00');d.setDate(d.getDate()+n);return fmt(d)}
+function saldoSeries(p){
+ var pts=[];
+ if(p==='day'){
+  var today=fmt(new Date());
+  var todays=S.tx.filter(function(t){return (t.date||'')===today}).sort(function(a,b){var ta=a.time||'',tb=b.time||'';if(ta!==tb)return ta<tb?-1:1;return a.id<b.id?-1:a.id>b.id?1:0});
+  if(!todays.length)return null;
+  var v=netWorthAt(addDaysStr(today,-1));
+  pts.push({lbl:todays[0].time||'',v:v});
+  todays.forEach(function(t){v=Math.round((v+txNetEffect(t))*100)/100;pts.push({lbl:t.time||'',v:v})});
+  return pts;
+ }
+ var r=periodRange(p),has=false;
+ S.tx.forEach(function(t){if(inPeriod(t.date,r))has=true});
+ if(!has)return null;
+ if(p==='week'){
+  var days=['lun','mar','mié','jue','vie','sáb','dom'];
+  for(var i=0;i<7;i++){var dd=new Date(r.from+'T00:00:00');dd.setDate(dd.getDate()+i);pts.push({lbl:days[i],v:netWorthAt(fmt(dd))})}
+  return pts;
+ }
+ var n=new Date(),y=n.getFullYear(),mo=n.getMonth(),last=new Date(y,mo+1,0).getDate();
+ for(var d=1;d<=last;d++)pts.push({lbl:String(d),v:netWorthAt(fmt(new Date(y,mo,d)))});
+ return pts;
+}
+function sMoney(v){return (v<0?'-':'')+moneyShort(Math.abs(v))}
+function saldoChart(p){
+ var pts=saldoSeries(p);
+ if(!pts||pts.length<2)return '<div class="empty">'+(p==='day'?'Sin movimientos hoy.':p==='week'?'Sin movimientos esta semana.':'Sin movimientos este mes.')+'</div>';
+ var W=520,H=210,L=52,R=12,T=16,B=24,pw=W-L-R,ph=H-T-B,n=pts.length;
+ var vs=pts.map(function(o){return o.v}),minV=Math.min.apply(null,vs),maxV=Math.max.apply(null,vs),avg=vs.reduce(function(s,x){return s+x},0)/n;
+ var span=maxV-minV;
+ if(span<=0){span=Math.max(20,Math.abs(maxV)*0.2||20);minV-=span/2;maxV+=span/2}else{minV-=span*0.08;maxV+=span*0.08}
+ function X(i){return L+(n===1?pw/2:pw*i/(n-1))}
+ function Y(v){return T+(maxV-v)/(maxV-minV)*ph}
+ var d='',len=0,prev=null;
+ pts.forEach(function(o,i){var x=X(i),y=Y(o.v);d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);if(prev)len+=Math.sqrt(Math.pow(x-prev[0],2)+Math.pow(y-prev[1],2));prev=[x,y]});
+ var last=pts[n-1],lx=X(n-1),ly=Y(last.v),ay=Y(avg);
+ var s='<svg class="csvg" data-saldo="1" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Saldo acumulado">';
+ [0,0.5,1].forEach(function(f){var gv=minV+(maxV-minV)*f,gy=Y(gv);s+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>';s+='<text x="'+(L-6)+'" y="'+(gy+3).toFixed(1)+'" font-size="10" text-anchor="end" fill="var(--mute2)">'+sMoney(gv)+'</text>'});
+ s+='<line x1="'+L+'" y1="'+ay.toFixed(1)+'" x2="'+(W-R)+'" y2="'+ay.toFixed(1)+'" stroke="var(--mute2)" stroke-width="1" stroke-dasharray="5 4"/>';
+ var step=n<=10?1:Math.ceil(n/6);
+ pts.forEach(function(o,i){if(i%step===0||i===n-1)s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" font-size="11" text-anchor="middle" fill="var(--mute2)">'+esc(o.lbl)+'</text>'});
+ s+='<path class="saldo-line" data-len="'+len.toFixed(1)+'" d="'+d+'" fill="none" stroke="var(--g)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="'+len.toFixed(1)+'" stroke-dashoffset="'+len.toFixed(1)+'"><title>Saldo: '+money(last.v)+'</title></path>';
+ var labX=lx,labAnchor='middle';if(lx>W-90){labAnchor='end';labX=W-R}
+ var labY=Math.max(12,ly-10);
+ s+='<text x="'+labX.toFixed(1)+'" y="'+labY.toFixed(1)+'" font-size="11" font-weight="700" text-anchor="'+labAnchor+'" fill="var(--ink)">'+sMoney(last.v)+'</text>';
+ s+='<circle class="saldo-dot" cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="4" fill="var(--g)" stroke="var(--bg)" stroke-width="2" opacity="0"/>';
+ s+='</svg>';
+ s+='<div class="cleg"><span><i style="background:var(--g)"></i>Saldo</span><span><i style="background:var(--mute2)"></i>Promedio del periodo</span></div>';
+ return s;
+}
+function cuentaChart(r){
+ var by={};
+ S.tx.forEach(function(t){if(t.type==='expense'&&inPeriod(t.date,r)){var a=acc(t.acc),k=t.acc||'__none';if(!by[k])by[k]={n:a?a.name:'Sin cuenta',v:0,acc:a};by[k].v+=t.amt}});
+ var arr=Object.keys(by).map(function(k){return by[k]}).filter(function(o){return o.v>0}).sort(function(a,b){return b.v-a.v});
+ if(!arr.length)return '<div class="empty">Sin gastos en este periodo.</div>';
+ var tot=arr.reduce(function(s,o){return s+o.v},0),st=settingsDef(),pal=[st.customTheme.primary,st.customTheme.secondary].concat(CHART_COLORS.slice(2));
+ var raw=arr.map(function(o){return o.v/tot*100}),fl=raw.map(Math.floor),rem=100-fl.reduce(function(s,x){return s+x},0),ord=raw.map(function(v,i){return {i:i,r:v-fl[i]}}).sort(function(a,b){return b.r-a.r});
+ for(var k=0;k<rem;k++)fl[ord[k%ord.length].i]++;
+ return arr.map(function(o,i){var p=fl[i],col=(o.acc&&accColor(o.acc))||pal[i%pal.length];return '<div class="crow"><div class="cl"><span>'+esc(o.n)+'</span><span><b>'+money(o.v)+'</b> · '+p.toFixed(0)+'%</span></div><div class="ctrack"><i data-w="'+Math.max(2,p).toFixed(1)+'" style="width:0%;background:'+col+'"></i></div></div>'}).join('');
+}
 var CHART_COLORS=['#1F7A5C','#2A9D8F','#3B82C4','#B87800','#B83A3A','#7C5CBF','#C4587A','#5B8C5A'];
 function catChart(r,total){var by={};S.tx.forEach(function(t){if(t.type==='expense'&&inPeriod(t.date,r)){var c=t.cat||'Otros';by[c]=(by[c]||0)+t.amt}});var arr=Object.keys(by).map(function(c){return {c:c,v:by[c]}}).sort(function(a,b){return b.v-a.v});if(!arr.length)return '<div class="empty">Sin gastos en este periodo.</div>';var st=settingsDef(),pal=[st.customTheme.primary,st.customTheme.secondary].concat(CHART_COLORS.slice(2));var raw=arr.map(function(o){return total>0?o.v/total*100:0}),fl=raw.map(Math.floor),rem=total>0?100-fl.reduce(function(s,x){return s+x},0):0,ord=raw.map(function(v,i){return {i:i,r:v-fl[i]}}).sort(function(a,b){return b.r-a.r});for(var k=0;k<rem;k++)fl[ord[k%ord.length].i]++;return arr.map(function(o,i){var p=fl[i];return '<div class="crow"><div class="cl"><span>'+esc(o.c)+'</span><span><b>'+money(o.v)+'</b> · '+p.toFixed(0)+'%</span></div><div class="ctrack"><i data-w="'+Math.max(2,p).toFixed(1)+'" style="width:0%;background:'+pal[i%pal.length]+'"></i></div></div>'}).join('')}
 function ieChart(p){var groups=[],lbl='',empty='';if(p==='day'){var v=periodIE('day');groups=[{lbl:'Hoy',inc:v.inc,exp:v.exp}];lbl='Ingresos vs gastos · hoy';empty='Sin ingresos ni gastos hoy.'}else if(p==='week'){var r=periodRange('week'),days=['lun','mar','mié','jue','vie','sáb','dom'];for(var i=0;i<7;i++){var dd=new Date(r.from+'T00:00:00');dd.setDate(dd.getDate()+i);var k=fmt(dd),ii=0,ee=0;S.tx.forEach(function(t){if((t.date||'')===k){if(t.type==='income')ii+=t.amt;if(t.type==='expense')ee+=t.amt}});groups.push({lbl:days[i],inc:ii,exp:ee})}lbl='Ingresos vs gastos · esta semana';empty='Sin ingresos ni gastos esta semana.'}else{var now=new Date();for(var j=5;j>=0;j--){var d=new Date(now.getFullYear(),now.getMonth()-j,1),kk=monthKeyOf(d),vv=monthIE(kk);groups.push({lbl:MESES[d.getMonth()].slice(0,3),inc:vv.inc,exp:vv.exp})}lbl='Ingresos vs gastos · últimos 6 meses';empty='Sin ingresos ni gastos en los últimos 6 meses.'}var max=0;groups.forEach(function(g){max=Math.max(max,g.inc,g.exp)});if(max<=0)return '<div class="empty">'+empty+'</div>';var n=groups.length,W=520,H=210,top=24,bot=24,base=H-bot,hh=base-top,gw=(W-16)/n,bw=Math.min(26,Math.max(10,gw/2-4));var s='<svg class="csvg" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+lbl+'">';s+='<line x1="8" y1="'+base+'" x2="'+(W-8)+'" y2="'+base+'" stroke="var(--line)" stroke-width="1"/>';groups.forEach(function(g,idx){var cx=8+gw*idx+gw/2,ih=g.inc/max*hh,eh=g.exp/max*hh,x1=cx-bw-2,x2=cx+2;s+='<rect class="iebar" data-y="'+(base-ih).toFixed(1)+'" data-h="'+Math.max(0,ih).toFixed(1)+'" data-base="'+base+'" x="'+x1.toFixed(1)+'" y="'+base+'" width="'+bw+'" height="0" rx="3" fill="var(--g)"><title>Ingresos: '+money(g.inc)+'</title></rect>';s+='<rect class="iebar" data-y="'+(base-eh).toFixed(1)+'" data-h="'+Math.max(0,eh).toFixed(1)+'" data-base="'+base+'" x="'+x2.toFixed(1)+'" y="'+base+'" width="'+bw+'" height="0" rx="3" fill="var(--r)"><title>Gastos: '+money(g.exp)+'</title></rect>';var big=g.inc>=g.exp?{x:x1,v:g.inc,h:ih}:{x:x2,v:g.exp,h:eh};if(big.v>0)s+='<text class="ielbl" data-ly="'+(base-big.h-5).toFixed(1)+'" data-lbase="'+(base-5)+'" x="'+(big.x+bw/2).toFixed(1)+'" y="'+(base-5)+'" font-size="10" text-anchor="middle" fill="var(--ink)">'+moneyShort(big.v)+'</text>';s+='<text x="'+cx.toFixed(1)+'" y="'+(H-6)+'" font-size="11" text-anchor="middle" fill="var(--mute2)">'+g.lbl+'</text>'});s+='</svg>';s+='<div class="cleg"><span><i style="background:var(--g)"></i>Ingresos</span><span><i style="background:var(--r)"></i>Gastos</span></div>';return s}
 function pieChart(v){var tot=v.inc+v.exp;if(tot<=0)return '<div class="empty">Sin ingresos ni gastos en este periodo.</div>';var R=80,C=2*Math.PI*R,fi=v.inc/tot,fe=v.exp/tot,net=v.inc-v.exp,pi=Math.round(fi*100),pe=100-pi;var s='<svg class="csvg" data-pie="1" data-fi="'+fi.toFixed(4)+'" data-fe="'+fe.toFixed(4)+'" data-c="'+C.toFixed(1)+'" viewBox="0 0 220 220" role="img" aria-label="Ingresos contra gastos del periodo" style="max-width:280px;margin:0 auto">';s+='<circle cx="110" cy="110" r="'+R+'" fill="none" stroke="var(--line)" stroke-width="34"/>';if(v.inc>0)s+='<circle class="pie-inc" cx="110" cy="110" r="'+R+'" fill="none" stroke="var(--g)" stroke-width="34" stroke-dasharray="0 '+C.toFixed(1)+'" transform="rotate(-90 110 110)"><title>Ingresos: '+money(v.inc)+' · '+pi+'%</title></circle>';if(v.exp>0)s+='<circle class="pie-exp" cx="110" cy="110" r="'+R+'" fill="none" stroke="var(--r)" stroke-width="34" stroke-dasharray="0 '+C.toFixed(1)+'" stroke-dashoffset="0" transform="rotate(-90 110 110)"><title>Gastos: '+money(v.exp)+' · '+pe+'%</title></circle>';s+='<text x="110" y="104" font-size="13" text-anchor="middle" fill="var(--mute2)">Balance</text><text x="110" y="126" font-size="17" font-weight="700" text-anchor="middle" fill="var(--ink)">'+(net<0?'-':'')+moneyShort(Math.abs(net))+'</text></svg>';s+='<div class="cleg" style="justify-content:center"><span><i style="background:var(--g)"></i>Ingresos <b>'+money(v.inc)+'</b> · '+pi+'%</span><span><i style="background:var(--r)"></i>Gastos <b>'+money(v.exp)+'</b> · '+pe+'%</span></div>';return s}
-function chartsHtml(){var st=settingsDef(),cp=st.chartPeriod||'month',cv=st.chartView||'cat',v=periodIE(cp),r=v.r,h='<h2>Gráficas</h2>';h+='<div class="chart"><div class="seg" style="margin-bottom:8px"><button type="button" data-act="chartperiod" data-k="day" class="'+(cp==='day'?'on':'')+'">Día</button><button type="button" data-act="chartperiod" data-k="week" class="'+(cp==='week'?'on':'')+'">Semana</button><button type="button" data-act="chartperiod" data-k="month" class="'+(cp==='month'?'on':'')+'">Mes</button></div><div class="seg" style="margin-bottom:12px"><button type="button" data-act="chartview" data-k="cat" class="'+(cv==='cat'?'on':'')+'">Por categoría</button><button type="button" data-act="chartview" data-k="pie" class="'+(cv==='pie'?'on':'')+'">Ingresos vs gastos</button><button type="button" data-act="chartview" data-k="ie" class="'+(cv==='ie'?'on':'')+'">Evolución</button></div>';if(v.inc<=0&&v.exp<=0)return h+'<div class="empty">Aún no hay movimientos en este periodo.</div></div>';if(cv==='pie')h+='<div class="chart-body"><h3>Ingresos vs gastos · '+r.label+'</h3>'+pieChart(v)+'</div>';else if(cv==='ie')h+='<div class="chart-body"><h3>'+(cp==='month'?'Ingresos vs gastos · últimos 6 meses':'Ingresos vs gastos · '+r.label)+'</h3>'+ieChart(cp)+'</div>';else h+='<div class="chart-body"><h3>Gastos por categoría · '+r.label+'</h3>'+catChart(r,v.exp)+'</div>';h+='</div>';return h}
+function chartsHtml(){var st=settingsDef(),cp=st.chartPeriod||'month',cv=st.chartView||'cat',v=periodIE(cp),r=v.r,h='<h2>Gráficas</h2>';h+='<div class="chart"><div class="seg" style="margin-bottom:8px"><button type="button" data-act="chartperiod" data-k="day" class="'+(cp==='day'?'on':'')+'">Día</button><button type="button" data-act="chartperiod" data-k="week" class="'+(cp==='week'?'on':'')+'">Semana</button><button type="button" data-act="chartperiod" data-k="month" class="'+(cp==='month'?'on':'')+'">Mes</button></div><div class="seg" style="margin-bottom:12px"><button type="button" data-act="chartview" data-k="cat" class="'+(cv==='cat'?'on':'')+'">Por categoría</button><button type="button" data-act="chartview" data-k="pie" class="'+(cv==='pie'?'on':'')+'">Ingresos vs gastos</button><button type="button" data-act="chartview" data-k="ie" class="'+(cv==='ie'?'on':'')+'">Evolución</button><button type="button" data-act="chartview" data-k="saldo" class="'+(cv==='saldo'?'on':'')+'">Saldo</button><button type="button" data-act="chartview" data-k="cuenta" class="'+(cv==='cuenta'?'on':'')+'">Por cuenta</button></div>';if(cv==='saldo')h+='<div class="chart-body"><h3>Saldo · '+r.label+'</h3>'+saldoChart(cp)+'</div>';else if(cv==='cuenta')h+='<div class="chart-body"><h3>Gastos por cuenta · '+r.label+'</h3>'+cuentaChart(r)+'</div>';else if(v.inc<=0&&v.exp<=0)h+='<div class="empty">Aún no hay movimientos en este periodo.</div>';else if(cv==='pie')h+='<div class="chart-body"><h3>Ingresos vs gastos · '+r.label+'</h3>'+pieChart(v)+'</div>';else if(cv==='ie')h+='<div class="chart-body"><h3>'+(cp==='month'?'Ingresos vs gastos · últimos 6 meses':'Ingresos vs gastos · '+r.label)+'</h3>'+ieChart(cp)+'</div>';else h+='<div class="chart-body"><h3>Gastos por categoría · '+r.label+'</h3>'+catChart(r,v.exp)+'</div>';h+='</div>';return h}
 function calLink(title,iso,day,rec,det,lbl){var d=new Date(iso+'T00:00:00'),e=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1),u='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+iso.replace(/-/g,'')+'/'+fmt(e).replace(/-/g,'')+'&details='+encodeURIComponent(det||'');if(rec){var rr=rec===true?'FREQ=MONTHLY;BYMONTHDAY='+(day>28?-1:day):rec;u+='&recur='+encodeURIComponent('RRULE:'+rr)}return '<button type="button" class="mini alt cal-icon" data-act="gcal" data-u="'+esc(u)+'" aria-label="Agregar al calendario" title="Agregar al calendario"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg></button>'}
 function BL(){S.bills=S.bills||[];return S.bills}
 /* Historial de ajustes de saldo: cada vez que "Confirma tus saldos" cambia un
@@ -1588,12 +1665,6 @@ function backupForm(){var fn=backupFileName();open('<h2 style="margin-top:0">Res
    portapapeles. Nada se sube a ningún servidor: el texto solo sale del
    teléfono si se envía. Si el mes no tiene movimientos, el texto lo dice. */
 var CAT_EMOJI={Comida:'🍔',Transporte:'🚌',Casa:'🏠',Servicios:'💡',Educación:'📚',Salud:'🏥',Ocio:'🎬',Compras:'🛒',Sueldo:'💰',Otros:'📦'};
-function monthReportText(){var n=new Date(),y=n.getFullYear(),mo=n.getMonth(),key=monthKeyOf(n),label=MESES[mo].charAt(0).toUpperCase()+MESES[mo].slice(1)+' '+y,inc=0,exp=0,by={};S.tx.forEach(function(t){if((t.date||'').slice(0,7)===key){if(t.type==='income')inc+=t.amt;if(t.type==='expense'){exp+=t.amt;var c=t.cat||'Otros';by[c]=(by[c]||0)+t.amt}}});var debt=0;S.accounts.forEach(function(a){if(a.type==='credit')debt+=Math.max(0,-balance(a))});var net=Math.round((inc-exp)*100)/100,lines=['📊 Mis finanzas · '+label,'','💰 Ingresos: '+money(inc),'💸 Gastos: '+money(exp),net>=0?'✅ Te quedan: '+money(net):'⚠️ Te faltan: '+money(-net),''];if(inc<=0&&exp<=0)lines.push('Sin movimientos este mes.');var cats=Object.keys(by).map(function(c){return {c:c,v:by[c]}}).sort(function(a,b){return b.v-a.v});if(cats.length){lines.push('Gastos por categoría:');cats.forEach(function(o){var p=exp>0?Math.round(o.v/exp*100):0;lines.push((CAT_EMOJI[o.c]||'📦')+' '+o.c+' '+money(o.v)+' ('+p+'%)')});lines.push('')}lines.push('💳 Deuda en tarjetas: '+money(debt));var bills=[];BL().forEach(function(b){billDatesInMonth(b,y,mo).forEach(function(d){bills.push({name:b.name,amt:+b.amt||0,d:d})})});bills.sort(function(a,b){return a.d-b.d});if(bills.length){lines.push('','📅 Pagos próximos:');bills.forEach(function(x){lines.push('· '+x.name+' — '+money(x.amt)+' ('+x.d+' '+MESES[mo].slice(0,3)+')')})}return lines.join('\n')}
-function showReportText(txt){open('<h2 style="margin-top:0">Reporte del mes</h2><div class="m">Copia este texto y pégalo donde quieras.</div><textarea id="rp" readonly rows="10" style="'+TA+'">'+esc(txt)+'</textarea><button class="btn" id="cp" style="margin-top:10px">Copiar</button><button class="btn ghost" id="cn">Cerrar</button>');$('cn').onclick=close;$('cp').onclick=function(){var t=$('rp');t.select();try{t.setSelectionRange(0,999999)}catch(e){}var ok=false;try{ok=document.execCommand('copy')}catch(e){}if(ok){say('Reporte copiado');return}if(navigator.clipboard){navigator.clipboard.writeText(t.value).then(function(){say('Reporte copiado')},function(){say('Mantén presionado el texto para copiarlo')})}else say('Mantén presionado el texto para copiarlo')}}
-function shareReport(){var txt=monthReportText();
- if(hasCapShare()){try{var p=window.Capacitor.Plugins.Share.share({title:'Reporte del mes',text:txt,dialogTitle:'Compartir reporte del mes'});if(p&&p.then){p.then(function(){say('Elige dónde compartir tu reporte')},function(){say('No se pudo compartir. Copia el texto del reporte.')})}else say('Elige dónde compartir tu reporte');return}catch(e){}}
- if(navigator.share){try{var q=navigator.share({title:'Reporte del mes',text:txt});if(q&&q.then){q.then(function(){say('Elige dónde compartir tu reporte')},function(){say('No se pudo compartir. Copia el texto del reporte.')})}else say('Elige dónde compartir tu reporte');return}catch(e){}}
- if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){say('Reporte copiado, pégalo en WhatsApp')},function(){showReportText(txt)})}else showReportText(txt)}
 /* Un respaldo debe tener la estructura de la app: accounts y tx son listas
    obligatorias; pagos próximos, atajos, categorías y ajustes, si vienen, con
    su tipo correcto. Sin validar, un respaldo roto (p. ej. accounts como objeto)
@@ -1629,7 +1700,7 @@ function payForm(id,preset){var c=acc(id),debt=Math.max(0,-balance(c)),msi=msiMo
 var DEFAULT_THEME={primary:'#1F7A5C',secondary:'#2A9D8F',background:'#F2F5F4',nav:'#1F7A5C'};
 function isHex(v){return typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v)}
 function shade(hex,p){var n=parseInt(hex.slice(1),16),f=1+p/100,cl=function(v){return Math.max(0,Math.min(255,Math.round(v*f)))};return '#'+((1<<24)+(cl((n>>16)&255)<<16)+(cl((n>>8)&255)<<8)+cl(n&255)).toString(16).slice(1)}
-function settingsDef(){S.settings=S.settings||{};var d=S.settings;if(!d.reminderTime)d.reminderTime='23:00';/* Migración: los temas predefinidos verde/azul/morado ya no existen; se ignoran y se usan los colores personalizados por defecto. */if(d.theme&&d.theme!=='personalizado')delete d.theme;d.theme='personalizado';/* Interruptor maestro de Notificaciones: nace APAGADO por defecto, para que quien descarga la app por primera vez sepa que debe activarlo para darle permisos. Migración (solo la primera vez, cuando nunca se guardó): si el usuario ya tenía activado el recordatorio de saldos o el de pagos, el maestro arranca prendido para no apagarle sus avisos al actualizar; si no tenía ninguno, arranca apagado. Se lee ANTES de aplicar los valores por defecto de los recordatorios, para no confundir un valor guardado con el default. */if(d.notificationsEnabled===undefined)d.notificationsEnabled=(d.reminderEnabled===true||d.billReminderEnabled===true);if(d.reminderEnabled===undefined)d.reminderEnabled=true;if(!d.lastReminderDate)d.lastReminderDate='';if(!d.lastConfirmDate)d.lastConfirmDate='';if(d.billReminderEnabled===undefined)d.billReminderEnabled=false;/* Recordatorio de pagos: opt-in, nace desactivado; cada quien lo activa si lo quiere. */if(!d.billReminderTime)d.billReminderTime='09:00';if(!d.mode||['light','dark','auto'].indexOf(d.mode)<0)d.mode='auto';if(!d.chartView||['cat','pie','ie'].indexOf(d.chartView)<0)d.chartView='cat';if(!d.chartPeriod||['day','week','month'].indexOf(d.chartPeriod)<0)d.chartPeriod='month';d.customTheme=d.customTheme||{};if(!isHex(d.customTheme.primary))d.customTheme.primary=DEFAULT_THEME.primary;if(!isHex(d.customTheme.secondary))d.customTheme.secondary=DEFAULT_THEME.secondary;if(!isHex(d.customTheme.background))d.customTheme.background=DEFAULT_THEME.background;if(!isHex(d.customTheme.nav))d.customTheme.nav=DEFAULT_THEME.nav;if(!d.widgetBg||!isHex(d.widgetBg))d.widgetBg=null;S.geofences=S.geofences||{};if(typeof S.geofences.enabled!=='boolean')S.geofences.enabled=false;if(!Array.isArray(S.geofences.places))S.geofences.places=[];S.geofences.places=S.geofences.places.filter(function(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&isFinite(+p.lat)&&isFinite(+p.lng)});S.geofences.places.forEach(function(p){p.radius=Math.max(30,Math.min(500,+p.radius||100));p.active=p.active!==false});return d}
+function settingsDef(){S.settings=S.settings||{};var d=S.settings;if(!d.reminderTime)d.reminderTime='23:00';/* Migración: los temas predefinidos verde/azul/morado ya no existen; se ignoran y se usan los colores personalizados por defecto. */if(d.theme&&d.theme!=='personalizado')delete d.theme;d.theme='personalizado';/* Interruptor maestro de Notificaciones: nace APAGADO por defecto, para que quien descarga la app por primera vez sepa que debe activarlo para darle permisos. Migración (solo la primera vez, cuando nunca se guardó): si el usuario ya tenía activado el recordatorio de saldos o el de pagos, el maestro arranca prendido para no apagarle sus avisos al actualizar; si no tenía ninguno, arranca apagado. Se lee ANTES de aplicar los valores por defecto de los recordatorios, para no confundir un valor guardado con el default. */if(d.notificationsEnabled===undefined)d.notificationsEnabled=(d.reminderEnabled===true||d.billReminderEnabled===true);if(d.reminderEnabled===undefined)d.reminderEnabled=true;if(!d.lastReminderDate)d.lastReminderDate='';if(!d.lastConfirmDate)d.lastConfirmDate='';if(d.billReminderEnabled===undefined)d.billReminderEnabled=false;/* Recordatorio de pagos: opt-in, nace desactivado; cada quien lo activa si lo quiere. */if(!d.billReminderTime)d.billReminderTime='09:00';if(!d.mode||['light','dark','auto'].indexOf(d.mode)<0)d.mode='auto';if(!d.chartView||['cat','pie','ie','saldo','cuenta'].indexOf(d.chartView)<0)d.chartView='cat';if(!d.chartPeriod||['day','week','month'].indexOf(d.chartPeriod)<0)d.chartPeriod='month';d.customTheme=d.customTheme||{};if(!isHex(d.customTheme.primary))d.customTheme.primary=DEFAULT_THEME.primary;if(!isHex(d.customTheme.secondary))d.customTheme.secondary=DEFAULT_THEME.secondary;if(!isHex(d.customTheme.background))d.customTheme.background=DEFAULT_THEME.background;if(!isHex(d.customTheme.nav))d.customTheme.nav=DEFAULT_THEME.nav;if(!d.widgetBg||!isHex(d.widgetBg))d.widgetBg=null;S.geofences=S.geofences||{};if(typeof S.geofences.enabled!=='boolean')S.geofences.enabled=false;if(!Array.isArray(S.geofences.places))S.geofences.places=[];S.geofences.places=S.geofences.places.filter(function(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&isFinite(+p.lat)&&isFinite(+p.lng)});S.geofences.places.forEach(function(p){p.radius=Math.max(30,Math.min(500,+p.radius||100));p.active=p.active!==false});return d}
 function reminderDue(){var st=settingsDef();if(!st.reminderEnabled)return false;if(st.lastReminderDate===today())return false;var n=new Date(),now=n.getHours()*60+n.getMinutes(),pp=st.reminderTime.split(':'),tt=(+pp[0])*60+(+pp[1]);return now>=tt}
 function notifyReminder(body){try{if('Notification' in window&&Notification.permission==='granted'){var n=new Notification('Confirma tus saldos',{body:body});/* Al tocar la notificación: cerrarla, traer la app al frente y abrir el modal de confirmación (igual que "Probar recordatorio", sin consumir nada extra: el día ya quedó marcado en checkReminder). */n.onclick=function(){try{n.close()}catch(e){}try{window.focus()}catch(e){}openConfirmModal()};return true}}catch(e){}return false}
 function cancelLocalReminder(){try{var C=window.Capacitor;if(!C||!C.Plugins||!C.Plugins.LocalNotifications)return false;var LN=C.Plugins.LocalNotifications;if(LN.cancel)LN.cancel({notifications:[{id:1},{id:2},{id:3}]}) /* 1 principal + 2 y 3 seguimientos */;return true}catch(e){return false}}
@@ -1937,7 +2008,6 @@ document.addEventListener('click',function(e){
  else if(act==='chartview'){var k=el.getAttribute('data-k');if(!k)return;var st=settingsDef();st.chartView=k;save();setTimeout(render,140)/* El render espera un instante para que se vea el efecto de presión del botón (si se renderiza de inmediato, el botón se destruye antes de que la animación se note) */}
  else if(act==='chartperiod'){var k=el.getAttribute('data-k');if(!k)return;var st=settingsDef();st.chartPeriod=k;save();setTimeout(render,140)}
  else if(act==='export')backupForm()
- else if(act==='sharereport')shareReport()
  else if(act==='import')restoreForm();
 });
 /* Selector de cuenta propio: clic en el botón abre la capa con la lista;
